@@ -46,7 +46,7 @@ After the above Prerequisites are met, Use the standard golang install process:
   ```
 
 In addition to providing the source, this should also build and install the
-solidfire-docker-driver binary in your Golang bin directory.
+nvd binary in your Golang bin directory.
 
 You will need to make sure you've added the $GOPATH/bin to your path,
 AND on Ubuntu you will also need to enable the use of the GO Bin path by sudo;
