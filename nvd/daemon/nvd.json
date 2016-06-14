@@ -1,0 +1,8 @@
+{
+	"IOProtocol": "NFS",
+	"IP": "10.3.199.29",
+	"Port": "8080",
+	"MountPoint": "/nmounts",
+	"Pool": "QA",
+	"Filesystem": "docker"
+}

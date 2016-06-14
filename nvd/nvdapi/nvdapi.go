@@ -1,0 +1,244 @@
+package nvdapi
+
+import (
+	"fmt"
+	"encoding/json"
+	log "github.com/Sirupsen/logrus"
+	"io/ioutil"
+	"errors"
+	"net/http"
+	"strings"
+	"time"
+	"os/exec"
+	"path/filepath"
+)
+
+
+type Client struct {
+	Protocol          string
+	Endpoint          string
+	Path              string
+	DefaultVolSize    int64 //bytes
+	Config            *Config
+	Port 			  string
+	MountPoint		  string
+	Filesystem  	  string
+}
+
+type Config struct {
+	IOProtocol	string // NFS, iSCSI, NBD, S3
+	IP			string // server:/export, IQN, devname, 
+	Port        string
+	Pool        string
+	MountPoint	string
+	Filesystem  string
+}
+
+func ReadParseConfig(fname string) (Config, error) {
+	content, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Fatal("Error processing config file: ", err)
+	}
+	var conf Config
+	err = json.Unmarshal(content, &conf)
+	if err != nil {
+		log.Fatal("Error parsing config file: ", err)
+	}
+	return conf, nil
+}
+
+func ClientAlloc(configFile string) (c *Client, err error) {
+	conf, err := ReadParseConfig(configFile)
+	if err != nil {
+		log.Fatal("Error initializing client from Config file: ", configFile, "(", err, ")")
+	}
+
+	NexentaClient := &Client{
+		Protocol: conf.IOProtocol,
+		Endpoint: "http://" + conf.IP + ":" + conf.Port + "/",
+		Path: conf.Pool + "/" + conf.Filesystem,
+		Config:	&conf,
+		MountPoint: conf.MountPoint,
+	}
+
+	return NexentaClient, nil
+}
+
+func (c *Client) Request(method, endpoint string, data map[string]interface{}) (body []byte, err error) {
+	log.Debug("Issue request to Nexenta, endpoint: ", endpoint, " data: ", data, " method: ", method)
+	if c.Endpoint == "" {
+		log.Error("Endpoint is not set, unable to issue requests")
+		err = errors.New("Unable to issue json-rpc requests without specifying Endpoint")
+		return nil, err
+	}
+	datajson, err := json.Marshal(data)
+	if (err != nil) {
+		log.Error(err)
+	}
+
+	tr := &http.Transport{}
+	client := &http.Client{Transport: tr}
+	url := c.Endpoint + endpoint
+	req, err := http.NewRequest(method, url, nil)
+	if len(data) != 0 {
+		req, err = http.NewRequest(method, url, strings.NewReader(string(datajson)))
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error("Error while handling request", err)
+		return nil, err
+	}
+	c.checkError(resp)
+	defer resp.Body.Close()
+	body, err = ioutil.ReadAll(resp.Body)
+	if (err != nil) {
+		log.Error(err)
+	}
+	if (resp.StatusCode == 202) {
+		body, err = c.resend202(body)
+	}
+	return body, err
+}
+
+func (c *Client) resend202(body []byte) ([]byte, error) {
+	time.Sleep(1000 * time.Millisecond)
+	r := make(map[string][]map[string]string)
+	err := json.Unmarshal(body, &r)
+	if (err != nil) {
+		log.Error(err)
+	}
+
+	url := c.Endpoint + r["links"][0]["href"]
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Error("Error while handling request", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	c.checkError(resp)
+
+	if resp.StatusCode == 202 {
+		body, err = c.resend202(body)
+	}
+	body, err = ioutil.ReadAll(resp.Body)
+	return body, err
+}
+
+func (c *Client) checkError(resp *http.Response) (bool) {
+	if resp.StatusCode > 399 {
+		body, err := ioutil.ReadAll(resp.Body)
+		log.Error(resp.StatusCode, string(body), err)
+		return true
+	}
+	return false
+}
+
+func (c *Client) CreateVolume(name string) (err error) {
+	log.Debug("Creating volume %s", name)
+	data := map[string]interface{} {
+		"path": c.Path + "/" + name,
+	}
+	c.Request("POST", "storage/filesystems", data)
+
+    data = make(map[string]interface{})
+    rw := map[string]interface{} {"allow": true, "etype": "fqnip", "entity": "*",}
+    rwlist := []map[string]interface{} {rw}
+    readWriteList := map[string]interface{} {"readWriteList": rwlist}
+    data["securityContexts"] = []interface{} {readWriteList}
+    data["filesystem"] = c.Path + "/" + name
+	c.Request("POST", "nas/nfs", data)
+
+    data = make(map[string]interface{})
+	perms := []string {"list_directory", "read_data", "add_file", "write_data", "add_subdirectory",
+		"append_data", "read_xattr", "write_xattr", "execute", "delete_child", "read_attributes",
+		"write_attributes", "delete", "read_acl", "write_acl", "write_owner", "synchronize"}
+	flags := []string {"file_inherit", "dir_inherit"}
+	data["type"] = "allow"
+	data["principal"] = "everyone@"
+	data["permissions"] = perms
+	data["flags"] = flags
+	url := "/storage/filesystems/" + strings.Replace(c.Path, "/", "%2F", -1) + "%2F" + name + "/acl"
+	_, err = c.Request("POST", url, data)
+	return
+}
+
+func (c *Client) DeleteVolume(name string) (err error) {
+	log.Debug("Deleting Volume ", name)
+	body, err := c.Request("DELETE", "storage/filesystems/" + strings.Replace(c.Path, "/", "%2F", -1) + "%2F" + name, nil)
+	if strings.Contains(string(body), "ENOENT") {
+		log.Info("Could not delete volume ", name, ", probably not found.")
+		log.Debug("Error trying to delete volume ", name, " :", string(body))
+	}
+	return
+}
+
+func (c *Client) MountVolume(name string) (err error) {
+	log.Debug("MountVolume ", name)
+	args := []string{"-t", "nfs", c.Config.IP + ":" + "/volumes/" + c.Path + "/" + name, filepath.Join(c.MountPoint, name)}
+	if out, err := exec.Command("mkdir", filepath.Join(c.MountPoint, name)).CombinedOutput(); err != nil {
+		log.Info("Error running mkdir command: ", err, "{", string(out), "}")
+	}
+	if out, err := exec.Command("mount", args...).CombinedOutput(); err != nil {
+		log.Info("Error running mount command: ", err, "{", string(out), "}")
+	}
+	return err
+}
+
+func (c *Client) UnmountVolume(name string) (err error) {
+	log.Debug("Unmounting Volume ", name)
+	path := c.Config.IP + ":" + "/volumes/" + c.Path + "/" + name
+	if out, err := exec.Command("umount", path).CombinedOutput(); err != nil {
+		err = fmt.Errorf("Error running umount command: ", err, "{", string(out), "}")
+		return err
+	}
+	log.Debug("Successfully unmounted volume: ", name)
+	return 
+}
+
+func (c *Client) GetVolume(name string) (vname string, err error) {
+	log.Debug("GetVolume ", name)
+	url := "/storage/filesystems?path=" + c.Path + "/" + name
+	body, err := c.Request("GET", url, nil)
+	r := make(map[string][]map[string]interface{})
+	jsonerr := json.Unmarshal(body, &r)
+	if (jsonerr != nil) {
+		log.Error(jsonerr)
+	}
+	if len(r["data"]) < 1 {
+		err = fmt.Errorf("Failed to find any volumes with name: %s ", name)
+		return vname, err
+	} else {
+		if v,ok := r["data"][0]["path"].(string); ok {
+			vname = strings.Trim(v, c.Path + "/")
+			} else {
+				return "", fmt.Errorf("Path is not of type string")
+		}
+	}
+	return vname, err
+}
+
+func (c *Client) ListVolumes() (vlist []string, err error) {
+	log.Debug("ListVolumes ")
+	url := "/storage/filesystems?parent=" + c.Path
+	resp, err := c.Request("GET", url, nil)
+	r := make(map[string][]map[string]interface{})
+	jsonerr := json.Unmarshal(resp, &r)
+	if (jsonerr != nil) {
+		log.Error(jsonerr)
+	}
+	if len(r["data"]) < 1 {
+		err = fmt.Errorf("Failed to find any volumes in filesystem: %s ", c.Path)
+		return vlist, err
+	} else {
+		for _, vol := range r["data"] {
+			if v,ok := vol["path"].(string); ok {
+				vname := strings.Trim(v, c.Path + "/")
+				vlist = append(vlist, strings.Trim(vname, c.Path + "/"))
+				} else {
+					return []string {""}, fmt.Errorf("Path is not of type string")
+			}
+		}
+	}
+	return vlist, err
+}
