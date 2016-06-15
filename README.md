@@ -38,7 +38,7 @@ For NS5 NFS a pool and parent filesystem must be precreated on NS appliance.
 ### NFS
 If you are using NexentaStor5 as a backend via NFS IOProtocol, you need nfs-common package installed.
 ```
-  apt-get install gcc
+  apt-get install nfs-common
 ```
 NOTE:
 Should be run as root and command may differ depending on your OS.
