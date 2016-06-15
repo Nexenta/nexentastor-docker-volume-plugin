@@ -19,6 +19,13 @@ environment.  After downloading the appropriate package be sure to scroll down
 to the Linux, Mac OS X, and FreeBSD tarballs section and set up your Go
 environment as per the instructions.
 
+### GCC
+```
+  apt-get install gcc
+```
+NOTE:
+Should be run as root and command may differ depending on your OS. 
+
 ### Docker
 As far as Docker install, again I prefer using wget and pulling the latest version
 from get.docker.com.  You can find instructions and steps on the Docker website
@@ -27,6 +34,14 @@ here:
 
 ### Nexenta
 For NS5 NFS a pool and parent filesystem must be precreated on NS appliance.
+
+### NFS
+If you are using NexentaStor5 as a backend via NFS IOProtocol, you need nfs-common package installed.
+```
+  apt-get install gcc
+```
+NOTE:
+Should be run as root and command may differ depending on your OS.
 
 ## Configuration
 Example config file can be found here:
