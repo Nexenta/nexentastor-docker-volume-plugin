@@ -11,7 +11,7 @@ var (
 )
 
 func Start(cfgFile string, debug bool) {
-	if debug == true {
+	if debug {
 		log.SetLevel(log.DebugLevel)
 	} else {
 		log.SetLevel(log.InfoLevel)

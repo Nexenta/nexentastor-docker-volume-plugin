@@ -5,7 +5,7 @@ import (
 	"sync"
 	"github.com/docker/go-plugins-helpers/volume"
 	"path/filepath"
-	"github.com/qeas/nexenta-docker-driver/nvd/nvdapi"
+	"github.com/nexenta/nexenta-docker-driver/nvd/nvdapi"
 )
 
 type NexentaDriver struct {
@@ -46,7 +46,7 @@ func (d NexentaDriver) Create(r volume.Request) volume.Response {
 }
 
 func (d NexentaDriver) Get(r volume.Request) volume.Response {
-	path := d.Client.MountPoint + "/" + r.Name
+	path := filepath.Join(d.Client.MountPoint, r.Name)
 	name, err := d.Client.GetVolume(r.Name)
 	if err != nil {
 		log.Info("Failed to retrieve volume named ", r.Name, "during Get operation: ", err)
@@ -73,7 +73,7 @@ func (d NexentaDriver) List(r volume.Request) volume.Response {
 func (d NexentaDriver) Mount(r volume.Request) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
-	mnt := d.Client.MountPoint + "/" + r.Name
+	mnt := filepath.Join(d.Client.MountPoint, r.Name)
 	d.Client.MountVolume(r.Name)
 	return volume.Response{Mountpoint: mnt}
 }

@@ -2,7 +2,7 @@ package nvdcli
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/qeas/nexenta-docker-driver/nvd/daemon"
+	"github.com/nexenta/nexenta-docker-driver/nvd/daemon"
 )
 
 var (
