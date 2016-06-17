@@ -55,12 +55,12 @@ var (
 		Usage: "list existing volumes",
 		Action: cmdListVolumes,
 	}
-	VolumeMountCmd{
+	VolumeMountCmd = cli.Command{
 		Name: "mount",
 		Usage: "mount an existing volume: `mount NAME`",
 		Action: cmdMountVolume,
 	}
-	VolumeUnmountCmd{
+	VolumeUnmountCmd = cli.Command{
 		Name: "unmount",
 		Usage: "unmount an existing volume: `unmount NAME`",
 		Action: cmdUnmountVolume,

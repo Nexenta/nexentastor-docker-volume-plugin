@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 )
 
+const defaultProtocol string = "NFS";
+const defaultPort int64 = 8443;
 
 type Client struct {
 	Protocol          string
@@ -53,6 +55,12 @@ func ClientAlloc(configFile string) (c *Client, err error) {
 	conf, err := ReadParseConfig(configFile)
 	if err != nil {
 		log.Fatal("Error initializing client from Config file: ", configFile, "(", err, ")")
+	}
+	if conf.Port == 0 {
+		conf.Port = defaultPort
+	}
+	if conf.IOProtocol == "" {
+		conf.IOProtocol = defaultProtocol
 	}
 
 	NexentaClient := &Client{
@@ -170,7 +178,7 @@ func (c *Client) CreateVolume(name string) (err error) {
 func (c *Client) DeleteVolume(name string) (err error) {
 	log.Debug("Deleting Volume ", name)
 	path := filepath.Join(c.Path, name)
-	body, err := c.Request("DELETE",  filepath.Join("storage/filesystems/", url.QueryEscape(path), nil))
+	body, err := c.Request("DELETE",  filepath.Join("storage/filesystems/", url.QueryEscape(path)), nil)
 	if strings.Contains(string(body), "ENOENT") {
 		log.Info("Could not delete volume ", name, ", probably not found.")
 		log.Debug("Error trying to delete volume ", name, " :", string(body))
@@ -180,7 +188,7 @@ func (c *Client) DeleteVolume(name string) (err error) {
 
 func (c *Client) MountVolume(name string) (err error) {
 	log.Debug("MountVolume ", name)
-	args := []string{"-t", "nfs", fmt.Sprintf( + "%s:/volumes/%s", c.Config.IP, filepath.Join(c.Path, name), filepath.Join(c.MountPoint, name)}
+	args := []string{"-t", "nfs", fmt.Sprintf("%s:/volumes/%s", c.Config.IP, filepath.Join(c.Path, name)), filepath.Join(c.MountPoint, name)}
 	if out, err := exec.Command("mkdir", filepath.Join(c.MountPoint, name)).CombinedOutput(); err != nil {
 		log.Info("Error running mkdir command: ", err, "{", string(out), "}")
 	}

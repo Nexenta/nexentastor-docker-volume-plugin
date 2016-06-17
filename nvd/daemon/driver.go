@@ -9,7 +9,6 @@ import (
 )
 
 type NexentaDriver struct {
-	DefaultVolSz   int64
 	MountPoint     string
 	InitiatorIFace string
 	Client         *nvdapi.Client
@@ -17,24 +16,17 @@ type NexentaDriver struct {
 }
 
 func DriverAlloc(cfgFile string) NexentaDriver {
-
 	client, _ := nvdapi.ClientAlloc(cfgFile)
 
-	initiator := "NFS"
-
 	d := NexentaDriver{
-		DefaultVolSz:	1024,
 		Client:         client,
 		Mutex:          &sync.Mutex{},
 		MountPoint:     client.MountPoint,
-		InitiatorIFace: initiator,
 	}
-
 	return d
 }
 
 func (d NexentaDriver) Create(r volume.Request) volume.Response {
-
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
