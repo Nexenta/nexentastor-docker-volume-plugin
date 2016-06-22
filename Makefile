@@ -1,15 +1,15 @@
-NED_EXE = nedv
+NVD_EXE = nvd
 FLAGS = -v
 
-all: $(NED_EXE)
+all: $(NVD_EXE)
 
-GO_FILES = src/github.com/Nexenta/nedge-docker-volume/nedv/nedv.go \
-	src/github.com/Nexenta/nedge-docker-volume/nedv/nedcli/nedcli.go \
-	src/github.com/Nexenta/nedge-docker-volume/nedv/nedcli/Foo.go \
-	src/github.com/Nexenta/nedge-docker-volume/nedv/nedcli/Bar.go \
-	src/github.com/Nexenta/nedge-docker-volume/nedv/daemon/daemon.go \
-	src/github.com/Nexenta/nedge-docker-volume/nedv/daemon/driver.go \
-	src/github.com/Nexenta/nedge-docker-volume/nedv/nedapi/nedapi.go
+GO_FILES = src/github.com/Nexenta/nexenta-docker-driver/nvd/nvd.go \
+	src/github.com/Nexenta/nexenta-docker-driver/nvd/nvdcli/nvdcli.go \
+	src/github.com/Nexenta/nexenta-docker-driver/nvd/nvdcli/daemoncli.go \
+	src/github.com/Nexenta/nexenta-docker-driver/nvd/nvdcli/volumecli.go \
+	src/github.com/Nexenta/nexenta-docker-driver/nvd/daemon/daemon.go \
+	src/github.com/Nexenta/nexenta-docker-driver/nvd/daemon/driver.go \
+	src/github.com/Nexenta/nexenta-docker-driver/nvd/nvdapi/nvdapi.go
 
 $(GO_FILES): setup
 
@@ -22,15 +22,15 @@ deps: setup
 	GOPATH=$(shell pwd) go get golang.org/x/net/proxy
 
 
-$(NED_EXE): $(GO_FILES)
-	GOPATH=$(shell pwd) go install github.com/Nexenta/nedge-docker-volume/nedv
+$(NVD_EXE): $(GO_FILES)
+	GOPATH=$(shell pwd) go install github.com/Nexenta/nexenta-docker-driver/nvd
 
 build:
-	GOPATH=$(shell pwd) go build $(FLAGS) github.com/Nexenta/nedge-docker-volume/nedv
+	GOPATH=$(shell pwd) go build $(FLAGS) github.com/Nexenta/nexenta-docker-driver/nvd
 
 setup: 
-	mkdir -p src/github.com/Nexenta/nedge-docker-volume/ 
-	cp -R ned/ src/github.com/Nexenta/nedge-docker-volume/nedv 
+	mkdir -p src/github.com/Nexenta/nexenta-docker-driver/ 
+	cp -R nvd/ src/github.com/Nexenta/nexenta-docker-driver/nvd 
 
 lint:
 	GOPATH=$(shell pwd) go get -v github.com/golang/lint/golint
@@ -46,6 +46,6 @@ clean:
 
 
 clobber:
-	rm -rf src/github.com/Nexenta/nedge-docker-volume
+	rm -rf src/github.com/Nexenta/nexenta-docker-driver
 	rm -rf bin/ pkg/
 

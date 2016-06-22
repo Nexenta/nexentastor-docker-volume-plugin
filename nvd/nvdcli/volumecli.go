@@ -3,7 +3,7 @@ package nvdcli
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/qeas/nexenta-docker-driver/nvd/nvdapi"
+	"github.com/Nexenta/nexenta-docker-driver/nvd/nvdapi"
 )
 
 
