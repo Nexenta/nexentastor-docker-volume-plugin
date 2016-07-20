@@ -2,6 +2,7 @@ package nvdapi
 
 import (
 	"fmt"
+	"crypto/tls"
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
@@ -15,7 +16,8 @@ import (
 )
 
 const defaultProtocol string = "NFS";
-const defaultPort int64 = 8443;
+const defaultPort int16 = 8443;
+const defaultRestScheme string = "https"
 
 type Client struct {
 	Protocol          string
@@ -23,7 +25,7 @@ type Client struct {
 	Path              string
 	DefaultVolSize    int64 //bytes
 	Config            *Config
-	Port 			  int64
+	Port 			  int16
 	MountPoint		  string
 	Filesystem  	  string
 }
@@ -31,10 +33,13 @@ type Client struct {
 type Config struct {
 	IOProtocol	string // NFS, iSCSI, NBD, S3
 	IP			string // server:/export, IQN, devname, 
-	Port        int64
+	Port        int16
 	Pool        string
 	MountPoint	string
 	Filesystem  string
+	Username	string
+	Password	string
+	RestScheme	string
 }
 
 func ReadParseConfig(fname string) (Config, error) {
@@ -62,10 +67,13 @@ func ClientAlloc(configFile string) (c *Client, err error) {
 	if conf.IOProtocol == "" {
 		conf.IOProtocol = defaultProtocol
 	}
+	if conf.RestScheme == "" {
+		conf.RestScheme = defaultRestScheme
+	}
 
 	NexentaClient := &Client{
 		Protocol: conf.IOProtocol,
-		Endpoint: fmt.Sprintf("http://%s:%d/", conf.IP, conf.Port),
+		Endpoint: fmt.Sprintf("%s://%s:%d/", conf.RestScheme, conf.IP, conf.Port),
 		Path: filepath.Join(conf.Pool, conf.Filesystem),
 		Config:	&conf,
 		MountPoint: conf.MountPoint,
@@ -85,8 +93,9 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 	if (err != nil) {
 		log.Error(err)
 	}
-
-	tr := &http.Transport{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	client := &http.Client{Transport: tr}
 	url := c.Endpoint + endpoint
 	req, err := http.NewRequest(method, url, nil)
@@ -95,8 +104,25 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
+	if resp.StatusCode == 401 || resp.StatusCode == 403 {
+		auth, err := c.https_auth()
+		log.Info(auth, err)
+		if err != nil {
+			log.Error("Error while trying to https login", err)
+			return nil, err
+		}
+		req, err = http.NewRequest(method, url, nil)
+		if len(data) != 0 {
+			req, err = http.NewRequest(method, url, strings.NewReader(string(datajson)))
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth))
+	}
+			
+	resp, err = client.Do(req)
+	log.Info(resp, err)
 	if err != nil {
-		log.Error("Error while handling request", err)
+		log.Error("Error while handling request %s, %s", err)
 		return nil, err
 	}
 	c.checkError(resp)
@@ -109,6 +135,41 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 		body, err = c.resend202(body)
 	}
 	return body, err
+}
+
+func (c *Client) https_auth() (token string, err error){
+	data := map[string]string {
+		"username": c.Config.Username,
+		"password": c.Config.Password,
+	}
+	datajson, err := json.Marshal(data)
+	url := c.Endpoint + "auth/login"
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(datajson)))
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	log.Debug(resp.StatusCode, resp.Body)
+		
+	if err != nil {
+		log.Error("Error while handling request %s, %s", err)
+		return "", err
+	}
+	c.checkError(resp)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if (err != nil) {
+		log.Error(err)
+	}
+	r := make(map[string]interface{})
+	err = json.Unmarshal(body, &r)
+	if (err != nil) {
+		err = fmt.Errorf("Error while trying to unmarshal json %s", err)
+		return "", err
+	}
+	return r["token"].(string), err
 }
 
 func (c *Client) resend202(body []byte) ([]byte, error) {
@@ -137,7 +198,7 @@ func (c *Client) resend202(body []byte) ([]byte, error) {
 }
 
 func (c *Client) checkError(resp *http.Response) (err error) {
-	if resp.StatusCode > 399 {
+	if resp.StatusCode > 401 {
 		body, err := ioutil.ReadAll(resp.Body)
 		err = fmt.Errorf("Got error in response from Nexenta, status_code: %s, body: %s", resp.StatusCode, string(body))
 		return err
@@ -244,10 +305,16 @@ func (c *Client) ListVolumes() (vlist []string, err error) {
 		err = fmt.Errorf("Failed to find any volumes in filesystem: %s.", c.Path)
 		return vlist, err
 	} else {
+		log.Info(r["data"])
 		for _, vol := range r["data"] {
-			if v,ok := vol["path"].(string); ok {
-				vname := strings.Trim(v, c.Path + "/")
-				vlist = append(vlist, strings.Trim(vname, c.Path + "/"))
+			if v, ok := vol["path"].(string); ok {
+				if v != c.Path {
+					log.Info(v)
+					vname := strings.Split(v, fmt.Sprintf("%s/", c.Path))[1]
+					log.Info(vname)
+					vlist = append(vlist, vname)
+				}
+					
 				} else {
 					return []string {""}, fmt.Errorf("Path is not of type string")
 			}

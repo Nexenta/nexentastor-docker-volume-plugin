@@ -87,3 +87,6 @@ func (d NexentaDriver) Unmount(r volume.Request) volume.Response {
 	return volume.Response{}
 }
 
+func (d NexentaDriver) Capabilities(r volume.Request) volume.Response {
+	return volume.Response{Capabilities: volume.Capability{Scope: "global"}}
+}

@@ -66,10 +66,11 @@ You will need to make sure you've added the $GOPATH/bin to your path,
 AND on Ubuntu you will also need to enable the use of the GO Bin path by sudo;
 either run visudo and edit, or provide an alias in your .bashrc file.
 
+You need to pre-create a folder for the GO code.
 For example in your .bashrc set the following alias after setting up PATH:
   ```
-  export GOPATH=$HOME/gocode
-  export PATH=$PATH:/usr/local/go/bin:$HOME/gocode/bin/
+  export GOPATH=<your GO folder>
+  export PATH=$PATH:/usr/local/go/bin:<your GO folder>/bin/
   alias sudo='sudo env PATH=$PATH'
   ```
 
