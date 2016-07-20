@@ -108,7 +108,7 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 		auth, err := c.https_auth()
 		log.Info(auth, err)
 		if err != nil {
-			log.Error("Error while trying to https login", err)
+			log.Error("Error while trying to https login: %s", err)
 			return nil, err
 		}
 		req, err = http.NewRequest(method, url, nil)
@@ -118,11 +118,11 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth))
 	}
-			
+
 	resp, err = client.Do(req)
 	log.Info(resp, err)
 	if err != nil {
-		log.Error("Error while handling request %s, %s", err)
+		log.Error("Error while handling request %s", err)
 		return nil, err
 	}
 	c.checkError(resp)
@@ -152,9 +152,9 @@ func (c *Client) https_auth() (token string, err error){
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	log.Debug(resp.StatusCode, resp.Body)
-		
+
 	if err != nil {
-		log.Error("Error while handling request %s, %s", err)
+		log.Error("Error while handling request: %s", err)
 		return "", err
 	}
 	c.checkError(resp)
@@ -166,7 +166,7 @@ func (c *Client) https_auth() (token string, err error){
 	r := make(map[string]interface{})
 	err = json.Unmarshal(body, &r)
 	if (err != nil) {
-		err = fmt.Errorf("Error while trying to unmarshal json %s", err)
+		err = fmt.Errorf("Error while trying to unmarshal json: %s", err)
 		return "", err
 	}
 	return r["token"].(string), err
