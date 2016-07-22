@@ -1,4 +1,3 @@
-
 setup: 
 	sudo mkdir -p /etc/nvd/
 	sudo cp nvd.json /etc/nvd/

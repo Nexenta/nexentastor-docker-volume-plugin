@@ -5,7 +5,7 @@ import (
 	"sync"
 	"github.com/docker/go-plugins-helpers/volume"
 	"path/filepath"
-	"github.com/nexenta/nexenta-docker-driver/nvd/nvdapi"
+	"github.com/Nexenta/nexenta-docker-driver/nvd/nvdapi"
 )
 
 type NexentaDriver struct {

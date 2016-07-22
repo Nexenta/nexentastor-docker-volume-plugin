@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/nexenta/nexenta-docker-driver/nvd/nvdapi"
-	"github.com/nexenta/nexenta-docker-driver/nvd/nvdcli"
+	"github.com/Nexenta/nexenta-docker-driver/nvd/nvdapi"
+	"github.com/Nexenta/nexenta-docker-driver/nvd/nvdcli"
 	"os"
 )
 
