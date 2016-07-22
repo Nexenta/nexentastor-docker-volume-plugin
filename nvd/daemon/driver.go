@@ -9,7 +9,6 @@ import (
 )
 
 type NexentaDriver struct {
-	DefaultVolSz   int64
 	MountPoint     string
 	InitiatorIFace string
 	Client         *nvdapi.Client
@@ -17,24 +16,17 @@ type NexentaDriver struct {
 }
 
 func DriverAlloc(cfgFile string) NexentaDriver {
-
 	client, _ := nvdapi.ClientAlloc(cfgFile)
 
-	initiator := "NFS"
-
 	d := NexentaDriver{
-		DefaultVolSz:	1024,
 		Client:         client,
 		Mutex:          &sync.Mutex{},
 		MountPoint:     client.MountPoint,
-		InitiatorIFace: initiator,
 	}
-
 	return d
 }
 
 func (d NexentaDriver) Create(r volume.Request) volume.Response {
-
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
@@ -46,7 +38,7 @@ func (d NexentaDriver) Create(r volume.Request) volume.Response {
 }
 
 func (d NexentaDriver) Get(r volume.Request) volume.Response {
-	path := d.Client.MountPoint + "/" + r.Name
+	path := filepath.Join(d.Client.MountPoint, r.Name)
 	name, err := d.Client.GetVolume(r.Name)
 	if err != nil {
 		log.Info("Failed to retrieve volume named ", r.Name, "during Get operation: ", err)
@@ -73,7 +65,7 @@ func (d NexentaDriver) List(r volume.Request) volume.Response {
 func (d NexentaDriver) Mount(r volume.Request) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
-	mnt := d.Client.MountPoint + "/" + r.Name
+	mnt := filepath.Join(d.Client.MountPoint, r.Name)
 	d.Client.MountVolume(r.Name)
 	return volume.Response{Mountpoint: mnt}
 }
@@ -95,3 +87,6 @@ func (d NexentaDriver) Unmount(r volume.Request) volume.Response {
 	return volume.Response{}
 }
 
+func (d NexentaDriver) Capabilities(r volume.Request) volume.Response {
+	return volume.Response{Capabilities: volume.Capability{Scope: "global"}}
+}

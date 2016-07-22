@@ -15,6 +15,8 @@ var (
 			VolumeCreateCmd,
 			VolumeDeleteCmd,
 			VolumeListCmd,
+			VolumeMountCmd,
+			VolumeUnmountCmd,
 		},
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -40,38 +42,29 @@ var (
 				Name:  "size",
 				Usage: "size of volume in bytes ",
 			},
-			cli.StringFlag{
-				Name:  "type",
-				Usage: "Specify a volume type ",
-			},
 		},
 		Action: cmdCreateVolume,
 	}
 	VolumeDeleteCmd = cli.Command{
 		Name:  "delete",
 		Usage: "delete an existing volume: `delete NAME`",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "range",
-				Value: "",
-				Usage: ": deletes a range of volume`",
-			},
-		},
 		Action: cmdDeleteVolume,
 	}
 	VolumeListCmd = cli.Command{
 		Name:  "list",
 		Usage: "list existing volumes",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "range",
-				Value: "",
-				Usage: ": range of volume`",
-			},
-		},
 		Action: cmdListVolumes,
 	}
-
+	VolumeMountCmd = cli.Command{
+		Name: "mount",
+		Usage: "mount an existing volume: `mount NAME`",
+		Action: cmdMountVolume,
+	}
+	VolumeUnmountCmd = cli.Command{
+		Name: "unmount",
+		Usage: "unmount an existing volume: `unmount NAME`",
+		Action: cmdUnmountVolume,
+	}
 )
 
 func getClient(c *cli.Context) (client *nvdapi.Client) {

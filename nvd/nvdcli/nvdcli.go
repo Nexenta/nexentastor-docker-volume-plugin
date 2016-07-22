@@ -12,7 +12,6 @@ func NvdCmdNotFound(c *cli.Context, command string) {
 }
 
 func NvdInitialize(c *cli.Context) error {
-
 	cfgFile := c.GlobalString("config")
 	fmt.Println(cfgFile)
 	if cfgFile != "" {

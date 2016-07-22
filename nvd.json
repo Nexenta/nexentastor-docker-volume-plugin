@@ -1,0 +1,11 @@
+{
+	"IOProtocol": "NFS",
+	"IP": "10.3.199.29",
+	"Port": 8443,
+	"MountPoint": "/nmounts",
+	"Pool": "QA",
+	"Filesystem": "docker",
+	"Username": "admin",
+	"Password": "nexenta1",
+	"RestScheme": "https"
+}

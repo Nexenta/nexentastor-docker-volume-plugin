@@ -27,9 +27,7 @@ NOTE:
 Should be run as root and command may differ depending on your OS. 
 
 ### Docker
-As far as Docker install, again I prefer using wget and pulling the latest version
-from get.docker.com.  You can find instructions and steps on the Docker website
-here:
+You can find instructions and steps on the Docker website here:
 [Get Docker](https://docs.docker.com/linux/step_one/)
 
 ### Nexenta
@@ -46,7 +44,7 @@ Should be run as root and command may differ depending on your OS.
 ## Configuration
 Example config file can be found here:
   ```
-  https://github.com/Nexenta/nexenta-docker-driver/blob/master/nvd/daemon/nvd.json
+  https://github.com/Nexenta/nexenta-docker-driver/blob/master/nvd.json
   ```
   
 Default path to config file is
@@ -55,9 +53,10 @@ Default path to config file is
   ```
 
 ## Driver Installation
-After the above Prerequisites are met, Use the standard golang install process:
+After the above Prerequisites are met, clone repository and use the Makefile:
   ```
-  go get -u github.com/nexenta/nexenta-docker-driver/...
+  git clone https://github.com/nexenta/nexenta-docker-driver
+  make
   ```
 
 In addition to providing the source, this should also build and install the
@@ -67,8 +66,11 @@ You will need to make sure you've added the $GOPATH/bin to your path,
 AND on Ubuntu you will also need to enable the use of the GO Bin path by sudo;
 either run visudo and edit, or provide an alias in your .bashrc file.
 
+You need to pre-create a folder for the GO code.
 For example in your .bashrc set the following alias after setting up PATH:
   ```
+  export GOPATH=<your GO folder>
+  export PATH=$PATH:/usr/local/go/bin:<your GO folder>/bin/
   alias sudo='sudo env PATH=$PATH'
   ```
 
@@ -107,4 +109,3 @@ create method checks the Nexenta backend to see if the Volume already exists,
 if it does it just passes back the info for the existing volume, otherwise it
 runs through the create process and creates the Volume on the Nexenta
 backend.
-
