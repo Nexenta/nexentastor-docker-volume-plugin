@@ -28,7 +28,7 @@ Should be run as root and command may differ depending on your OS.
 
 ### Docker
 You can find instructions and steps on the Docker website here:
-[Get Docker](https://docs.docker.com/linux/step_one/)
+[Get Docker](https://docs.docker.com/engine/)
 
 ### Nexenta
 For NS5 NFS a pool and parent filesystem must be precreated on NS appliance.
