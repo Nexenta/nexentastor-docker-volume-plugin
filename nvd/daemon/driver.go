@@ -62,7 +62,7 @@ func (d NexentaDriver) List(r volume.Request) volume.Response {
 	return volume.Response{Volumes: vols}
 }
 
-func (d NexentaDriver) Mount(r volume.Request) volume.Response {
+func (d NexentaDriver) Mount(r volume.MountRequest) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 	mnt := filepath.Join(d.Client.MountPoint, r.Name)
@@ -82,7 +82,7 @@ func (d NexentaDriver) Remove(r volume.Request) volume.Response {
 	return volume.Response{}
 }
 
-func (d NexentaDriver) Unmount(r volume.Request) volume.Response {
+func (d NexentaDriver) Unmount(r volume.UnmountRequest) volume.Response {
 	d.Client.UnmountVolume(r.Name)
 	return volume.Response{}
 }
