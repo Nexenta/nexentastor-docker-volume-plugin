@@ -117,9 +117,9 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth))
+		resp, err = client.Do(req)
 	}
 
-	resp, err = client.Do(req)
 	log.Info(resp, err)
 	if err != nil {
 		log.Error("Error while handling request %s", err)
@@ -182,7 +182,13 @@ func (c *Client) resend202(body []byte) ([]byte, error) {
 	}
 
 	url := c.Endpoint + r["links"][0]["href"]
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
 	if err != nil {
 		err = fmt.Errorf("Error while handling request %s", err)
 		return body, err
@@ -241,7 +247,6 @@ func (c *Client) DeleteVolume(name string) (err error) {
 	path := filepath.Join(c.Path, name)
 	body, err := c.Request("DELETE",  filepath.Join("storage/filesystems/", url.QueryEscape(path)), nil)
 	if strings.Contains(string(body), "ENOENT") {
-		log.Info("Could not delete volume ", name, ", probably not found.")
 		log.Debug("Error trying to delete volume ", name, " :", string(body))
 	}
 	return err
