@@ -289,7 +289,7 @@ func (c *Client) GetVolume(name string) (vname string, err error) {
 		return vname, err
 	} else {
 		if v,ok := r["data"][0]["path"].(string); ok {
-			vname = strings.Trim(v, c.Path + "/")
+			vname = strings.Split(v, fmt.Sprintf("%s/", c.Path))[1]
 			} else {
 				return "", fmt.Errorf("Path is not of type string")
 		}
