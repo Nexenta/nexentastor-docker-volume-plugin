@@ -70,7 +70,7 @@ You need to pre-create a folder for the GO code.
 For example in your .bashrc set the following alias after setting up PATH:
   ```
   export GOPATH=<your GO folder>
-  export PATH=$PATH:/usr/local/go/bin:<your GO folder>/bin/
+  export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin/
   alias sudo='sudo env PATH=$PATH'
   ```
 
