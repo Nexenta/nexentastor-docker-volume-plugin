@@ -1,5 +1,6 @@
 setup: 
 	sudo mkdir -p /etc/nvd/
+	sudo mkdir /nmounts
 	sudo cp nvd.json /etc/nvd/
 	go get -u -v github.com/nexenta/nexenta-docker-driver/...
 

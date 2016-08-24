@@ -104,9 +104,9 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
+	log.Debug("No auth: ", resp.StatusCode, resp.Body)
 	if resp.StatusCode == 401 || resp.StatusCode == 403 {
 		auth, err := c.https_auth()
-		log.Info(auth, err)
 		if err != nil {
 			log.Error("Error while trying to https login: %s", err)
 			return nil, err
@@ -118,9 +118,9 @@ func (c *Client) Request(method, endpoint string, data map[string]interface{}) (
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", auth))
 		resp, err = client.Do(req)
+		log.Debug("With auth: ", resp.StatusCode, resp.Body)
 	}
 
-	log.Info(resp, err)
 	if err != nil {
 		log.Error("Error while handling request %s", err)
 		return nil, err
@@ -244,6 +244,11 @@ func (c *Client) CreateVolume(name string) (err error) {
 
 func (c *Client) DeleteVolume(name string) (err error) {
 	log.Debug("Deleting Volume ", name)
+	vname, err := c.GetVolume(name)
+	if vname == "" {
+		log.Error("Volume %s does not exist.", name)
+		return err
+	}
 	path := filepath.Join(c.Path, name)
 	body, err := c.Request("DELETE",  filepath.Join("storage/filesystems/", url.QueryEscape(path)), nil)
 	if strings.Contains(string(body), "ENOENT") {
@@ -256,10 +261,10 @@ func (c *Client) MountVolume(name string) (err error) {
 	log.Debug("MountVolume ", name)
 	args := []string{"-t", "nfs", fmt.Sprintf("%s:/volumes/%s", c.Config.IP, filepath.Join(c.Path, name)), filepath.Join(c.MountPoint, name)}
 	if out, err := exec.Command("mkdir", filepath.Join(c.MountPoint, name)).CombinedOutput(); err != nil {
-		log.Info("Error running mkdir command: ", err, "{", string(out), "}")
+		log.Debug("Error running mkdir command: ", err, "{", string(out), "}")
 	}
 	if out, err := exec.Command("mount", args...).CombinedOutput(); err != nil {
-		log.Info("Error running mount command: ", err, "{", string(out), "}")
+		log.Debug("Error running mount command: ", err, "{", string(out), "}")
 	}
 	return err
 }
@@ -288,6 +293,7 @@ func (c *Client) GetVolume(name string) (vname string, err error) {
 		err = fmt.Errorf("Failed to find any volumes with name: %s.", name)
 		return vname, err
 	} else {
+		log.Info(r["data"])
 		if v,ok := r["data"][0]["path"].(string); ok {
 			vname = strings.Split(v, fmt.Sprintf("%s/", c.Path))[1]
 			} else {
@@ -310,13 +316,11 @@ func (c *Client) ListVolumes() (vlist []string, err error) {
 		err = fmt.Errorf("Failed to find any volumes in filesystem: %s.", c.Path)
 		return vlist, err
 	} else {
-		log.Info(r["data"])
+		log.Debug(r["data"])
 		for _, vol := range r["data"] {
 			if v, ok := vol["path"].(string); ok {
 				if v != c.Path {
-					log.Info(v)
 					vname := strings.Split(v, fmt.Sprintf("%s/", c.Path))[1]
-					log.Info(vname)
 					vlist = append(vlist, vname)
 				}
 					
