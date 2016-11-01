@@ -43,9 +43,9 @@ var (
 
 func cmdDaemonStop(c *cli.Context) {
 	cntxt := &daemon.Context{
-		PidFileName: "/var/run/ndvol.pid",
+		PidFileName: "/var/run/nvd.pid",
 		PidFilePerm: 0644,
-		LogFileName: "/var/log/ndvol.log",
+		LogFileName: "/var/log/nvd.log",
 		LogFilePerm: 0640,
 		Umask:       027,
 	}
@@ -58,9 +58,9 @@ func cmdDaemonStop(c *cli.Context) {
 
 func cmdDaemonStart(c *cli.Context) {
 	cntxt := &daemon.Context{
-		PidFileName: "/var/run/ndvol.pid",
+		PidFileName: "/var/run/nvd.pid",
 		PidFilePerm: 0644,
-		LogFileName: "/var/log/ndvol.log",
+		LogFileName: "/var/log/nvd.log",
 		LogFilePerm: 0640,
 		Umask:       027,
 	}
