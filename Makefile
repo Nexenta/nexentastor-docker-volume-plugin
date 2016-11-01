@@ -2,7 +2,7 @@ setup:
 	sudo mkdir -p /etc/nvd/
 	sudo mkdir /nmounts
 	sudo cp nvd.json /etc/nvd/
-	go get -u -v github.com/nexenta/nexenta-docker-driver/...
+	go get -u -v github.com/Nexenta/nexenta-docker-driver/...
 
 lint:
 	go get -v github.com/golang/lint/golint
