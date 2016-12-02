@@ -3,8 +3,8 @@ Nexenta Plugin for Docker Volumes
 
 
 ## Description
-This plugin provides the ability to use Nexenta Storage Clusters as backend
-devices in a Docker environment.
+This plugin provides the ability to use NexentaStor as a backend
+devices in a Docker environment over NFS protocol.
 
 ## Prerequisites
 ### Golang
