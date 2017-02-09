@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 )
 
+const socketAddress = "/run/docker/plugins/nvd.sock"
+
 var (
 	defaultDir = filepath.Join(volume.DefaultDockerRootDirectory, "nvd")
 )
@@ -20,5 +22,5 @@ func Start(cfgFile string, debug bool) {
 	d := DriverAlloc(cfgFile)
 	h := volume.NewHandler(d)
 	log.Info("Driver Created, Handler Initialized")
-	log.Info(h.ServeUnix("root", "nvd"))
+	log.Info(h.ServeUnix("root", socketAddress))
 }
