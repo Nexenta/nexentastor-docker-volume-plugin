@@ -22,5 +22,5 @@ func Start(cfgFile string, debug bool) {
 	d := DriverAlloc(cfgFile)
 	h := volume.NewHandler(d)
 	log.Info("Driver Created, Handler Initialized")
-	log.Info(h.ServeUnix("root", socketAddress))
+	log.Info(h.ServeUnix(socketAddress, 0))
 }
