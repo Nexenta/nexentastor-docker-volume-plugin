@@ -2,7 +2,7 @@ PLUGIN_NAME=alexeykhodos/nexentastor-nfs-plugin
 PLUGIN_TAG=latest
 
 
-all: clean docker rootfs create enable push
+all: clean docker rootfs create enable
 
 
 clean:
