@@ -1,4 +1,4 @@
-PLUGIN_NAME=alexeykhodos/nexentastor-nfs-plugin
+PLUGIN_NAME=nexenta/nexentastor-nfs-plugin
 PLUGIN_TAG=latest
 
 
