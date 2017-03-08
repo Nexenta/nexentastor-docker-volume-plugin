@@ -24,6 +24,12 @@
     },
     "mounts": [
         {
+            "destination": "/mnt/state",
+            "source": "/var/lib/docker/plugins/",
+            "options": ["rbind"],
+            "type": "bind"
+        },
+        {
             "destination": "/etc/nvd/",
             "options": ["rbind", "rw"],
             "source": "/etc/nvd/",
