@@ -1,7 +1,7 @@
 {
     "description": "NexentaStor NFS plugin for Docker",
     "documentation": "https://github.com/Nexenta/nexenta-docker-driver/",
-    "entrypoint": ["./nvd", "daemon", "start", "-v", ">", "/etc/nvd/nvd.log"],
+    "entrypoint": ["/bin/nvd", "daemon", "start", "-v", ">", "/etc/nvd/nvd.log"],
     "env": [
         {
             "name": "DEBUG",
@@ -24,14 +24,6 @@
     },
     "mounts": [
         {
-            "destination": "/mnt/state",
-            "options": [
-                "rbind"
-            ],
-            "source": "/var/lib/docker/plugins/",
-            "type": "bind"
-        },
-        {
             "destination": "/etc/nvd/",
             "options": ["rbind", "rw"],
             "source": "/etc/nvd/",
@@ -42,5 +34,5 @@
     "network": {
         "type": "host"
     },
-    "propagatedmount": "/mnt/volumes"
+    "propagatedmount": "/mnt"
 }

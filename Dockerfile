@@ -2,8 +2,8 @@ FROM alpine
 
 RUN apk update
 
-RUN mkdir -p /run/docker/plugins /mnt/state /mnt/volumes
+RUN mkdir -p /run/docker/plugins /mnt
 
-COPY nvd nvd
+COPY bin/nvd /bin/nvd
 
 CMD ["bin/sh"]

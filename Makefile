@@ -1,5 +1,5 @@
 PLUGIN_NAME=nexenta/nexentastor-nfs-plugin
-PLUGIN_TAG=latest
+PLUGIN_TAG=stable
 
 
 all: clean docker rootfs create enable
@@ -7,7 +7,7 @@ all: clean docker rootfs create enable
 
 clean:
 	@echo "### rm ./plugin"
-	@rm -rf ./plugin
+	@rm -rf ./plugin bin
 
 docker:
 	@echo "### docker build: builder image"
@@ -15,7 +15,8 @@ docker:
 	@echo "### extract nvd"
 	@docker create --name tmp builder
 	@docker start -i tmp
-	@docker cp tmp:/go/bin/nvd .
+	@mkdir bin
+	@docker cp tmp:/go/bin/nvd bin/
 	@docker rm -vf tmp
 	@docker rmi builder
 	@echo "### docker build: rootfs image with nvd"
@@ -28,6 +29,7 @@ rootfs:
 	@docker export tmp | tar -x -C ./plugin/rootfs
 	@echo "### copy config.json to ./plugin/"
 	@cp config.json ./plugin/
+	@cp bin/nvd plugin/rootfs/
 	@docker rm -vf tmp
 
 create:
