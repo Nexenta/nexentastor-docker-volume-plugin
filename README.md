@@ -13,16 +13,10 @@ cp nvd.json.example /etc/nvd/nvd.json
 ```
 3) Install and run the plugin
 ```
-docker plugin install nexenta/nexentastor-nfs-plugin
+make
 ```
 4) Use plugin to create docker volumes
 ```
 docker volume create -d nexenta/nexentastor-nfs-plugin --name=testvolume
 docker run -v testvolume:/Data -it ubuntu /bin/bash
-```
-
-NOTE:
-If you need to update the plugin before installing use Makefile for step 3.
-```
-make
 ```
