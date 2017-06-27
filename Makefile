@@ -16,6 +16,7 @@ docker:
 	@docker create --name tmp builder
 	@docker start -i tmp
 	@mkdir bin
+	@mkdir -p /var/lib/nvd
 	@docker cp tmp:/go/bin/nvd bin/
 	@docker rm -vf tmp
 	@docker rmi builder
