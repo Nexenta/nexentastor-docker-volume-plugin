@@ -17,6 +17,6 @@ make
 ```
 4) Use plugin to create docker volumes
 ```
-docker volume create -d nexenta/nexentastor-nfs-plugin --name=testvolume
+docker volume create -d nexenta/nexentastor-nfs-plugin:stable --name=testvolume
 docker run -v testvolume:/Data -it ubuntu /bin/bash
 ```
