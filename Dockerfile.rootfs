@@ -1,0 +1,15 @@
+# this Dockerfile build an image that can be used as rootfs for Docker volume driver
+
+# build container
+FROM golang:1.11 as builder
+WORKDIR /go/src/github.com/Nexenta/nexenta-docker-driver/
+COPY . ./
+RUN make build-go
+
+# driver rootfs container
+FROM alpine:3.9.2
+LABEL name="nexenta-docker-driver"
+LABEL maintainer="Nexenta Systems, Inc."
+LABEL description="NexentaStor Docker Driver"
+COPY --from=builder /go/src/github.com/Nexenta/nexenta-docker-driver/bin/nvd /bin/nvd
+CMD ["bin/sh"]

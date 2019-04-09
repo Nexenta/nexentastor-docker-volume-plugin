@@ -1,48 +1,70 @@
-PLUGIN_NAME=nexenta/nexentastor-nfs-plugin
-PLUGIN_TAG=stable
+# NexentaStor Docker Volume Driver makefile
 
+DRIVER_NAME = nexentastor-nfs-plugin
+IMAGE_NAME ?= ${DRIVER_NAME}
 
-all: clean docker rootfs create enable
+#TODO rename?
+DRIVER_EXECUTABLE_NAME = nvd
 
+REGISTRY_PRODUCTION ?= nexenta
+REGISTRY_DEVELOPMENT ?= 10.3.199.92:5000
 
+VERSION ?= $(shell git rev-parse --abbrev-ref HEAD | sed -e "s/.*\\///")
+COMMIT ?= $(shell git rev-parse HEAD | cut -c 1-7)
+DATETIME ?= $(shell date +'%F_%T')
+LDFLAGS ?= \
+	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.Version=${VERSION} \
+	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.Commit=${COMMIT} \
+	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.DateTime=${DATETIME}
+
+.PHONY: all
+all: build-development
+
+.PHONY: build-go
+build-go:
+	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/${DRIVER_EXECUTABLE_NAME} -ldflags "${LDFLAGS}" ./cmd
+
+.PHONY: plugin-rootfs
+ROOTFS_CONTAINER_ID = ""
+build-rootfs: clean
+	mkdir -p ./plugin/rootfs
+	cp config.json ./plugin/
+	docker build -f Dockerfile.rootfs -t ${IMAGE_NAME}_${VERSION}:rootfs .
+	export ROOTFS_CONTAINER_ID=$(shell docker create ${IMAGE_NAME}_${VERSION}:rootfs); \
+	docker export $${ROOTFS_CONTAINER_ID} | tar -x -C ./plugin/rootfs; \
+	docker rm -vf $${ROOTFS_CONTAINER_ID}
+
+.PHONY: build-development
+build-development: uninstall-development build-rootfs
+	cp config.json ./plugin/
+	docker plugin create ${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION} ./plugin
+	docker plugin enable ${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION}
+
+.PHONY: build-production
+build-production: uninstall-production build-rootfs
+	cp config.json ./plugin/
+	docker plugin create ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION} ./plugin
+	docker plugin enable ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}
+
+.PHONY: push-development
+push-development:
+	docker plugin push ${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION}
+
+.PHONY: push-production
+push-production:
+	docker plugin push ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}
+
+.PHONY: uninstall-development
+uninstall-development:
+	docker plugin disable -f ${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION} || true
+	docker plugin remove -f ${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION} || true
+
+.PHONY: uninstall-production
+uninstall-production:
+	docker plugin disable -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION} || true
+	docker plugin remove -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION} || true
+
+.PHONY: clean
 clean:
-	@echo "### rm ./plugin"
-	@rm -rf ./plugin bin
-
-docker:
-	@echo "### docker build: builder image"
-	@docker build -q -t builder -f Dockerfile.dev .
-	@echo "### extract nvd"
-	@docker create --name tmp builder
-	@docker start -i tmp
-	@mkdir bin
-	@mkdir -p /var/lib/nvd
-	@docker cp tmp:/go/bin/nvd bin/
-	@docker rm -vf tmp
-	@docker rmi builder
-	@echo "### docker build: rootfs image with nvd"
-	@docker build -q -t ${PLUGIN_NAME}:rootfs .
-
-rootfs:
-	@echo "### create rootfs directory in ./plugin/rootfs"
-	@mkdir -p ./plugin/rootfs
-	@docker create --name tmp ${PLUGIN_NAME}:rootfs
-	@docker export tmp | tar -x -C ./plugin/rootfs
-	@echo "### copy config.json to ./plugin/"
-	@cp config.json ./plugin/
-	@cp bin/nvd plugin/rootfs/
-	@docker rm -vf tmp
-
-create:
-	@echo "### remove existing plugin ${PLUGIN_NAME}:${PLUGIN_TAG} if exists"
-	@docker plugin rm -f ${PLUGIN_NAME}:${PLUGIN_TAG} || true
-	@echo "### create new plugin ${PLUGIN_NAME}:${PLUGIN_TAG} from ./plugin"
-	@docker plugin create ${PLUGIN_NAME}:${PLUGIN_TAG} ./plugin
-
-enable:
-	@echo "### enable plugin ${PLUGIN_NAME}:${PLUGIN_TAG}"
-	@docker plugin enable ${PLUGIN_NAME}:${PLUGIN_TAG}
-
-push:  clean docker rootfs create enable
-	@echo "### push plugin ${PLUGIN_NAME}:${PLUGIN_TAG}"
-	@docker plugin push ${PLUGIN_NAME}:${PLUGIN_TAG}
+	go clean -r -x
+	-rm -rf bin plugin

@@ -1,22 +1,175 @@
-Nexenta Plugin for Docker Volumes
-======================================
+# NexentaStor Volume Driver for Docker (v1.0.0)
 
-Usage:
-1) Clone this repository
+[![Go Report Card](https://goreportcard.com/badge/github.com/Nexenta/nexenta-docker-driver)](https://goreportcard.com/report/github.com/Nexenta/nexenta-docker-driver)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+
+This branch is currently under **development**, consider to wait for stable version before using in production.
+
+NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nexenta.com/products/nexentastor).
+
+## Supported versions
+
+|                | NexentaStor 5.1                                                      | NexentaStor 5.2                                                      |
+|----------------|----------------------------------------------------------------------|----------------------------------------------------------------------|
+| Docker >=17.06 | [1.0.0](https://github.com/Nexenta/nexenta-docker-driver/tree/1.0.0) | [1.0.0](https://github.com/Nexenta/nexenta-docker-driver/tree/1.0.0) |
+
+## Requirements
+
+- Following utilities must be installed on Docker setup:
+  ```bash
+  # for NFS mounts
+  apt install -y nfs-common
+  ```
+
+## Installation
+
+1. Create NexentaStor dataset for the volume driver, example: `spool01/dataset`.
+   Volume driver will create filesystems in this dataset and mount them to use as Docker volumes.
+2. Create driver configuration file: `/etc/nvd/nvd.yaml`. Driver configuration
+    [example](/etc/nvd/nvd.yaml):
+   ```yaml
+   restIp: https://10.3.3.4:8443,https://10.3.3.5:8443 # [required] NexentaStor REST API endpoint(s)
+   username: admin                                     # [required] NexentaStor REST API username
+   password: p@ssword                                  # [required] NexentaStor REST API password
+   defaultDataset: spool01/dataset                     # [required] default 'pool/dataset' to use
+   defaultDataIp: 20.20.20.21                          # [required] default NexentaStor data IP or HA VIP
+   #defaultMountOptions: noatime                       # mount options (mount -o ...)
+   #debug: true                                        # more logs (true/false)
+   ```
+
+   All driver configuration options:
+
+   | Name                  | Description                                                     | Required | Example                 |
+   |-----------------------|-----------------------------------------------------------------|----------|-------------------------|
+   | `restIp`              | NexentaStor REST API endpoint(s); `,` to separate cluster nodes | yes      | `https://10.3.3.4:8443` |
+   | `username`            | NexentaStor REST API username                                   | yes      | `admin`                 |
+   | `password`            | NexentaStor REST API password                                   | yes      | `p@ssword`              |
+   | `defaultDataset`      | parent dataset for driver's filesystems [pool/dataset]          | yes      | `spool01/dataset`       |
+   | `defaultDataIp`       | NexentaStor data IP or HA VIP for mounting shares               | yes      | `20.20.20.21`           |
+   | `defaultMountOptions` | NFS mount options: `mount -o ...` (default: "")                 | no       | `noatime,nosuid`        |
+   | `debug`               | print more logs (default: false)                                | no       | `true`                  |
+
+   **Note**: parameter `restIp` can point on a single NexentaStor appliance or on each of the nodes of HA cluster.
+
+3. Install volume driver:
+   ```bash
+   docker plugin install nexenta/nexentastor-nfs-plugin:1.0.0
+   ```
+4. Enable volume driver:
+   ```bash
+   docker plugin enable nexenta/nexentastor-nfs-plugin:1.0.0
+   ```
+
+Volume driver should be listed after installation:
+
+```bash
+$ docker plugin list
+ID                  NAME                                   DESCRIPTION                            ENABLED
+b227326b403d        nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver for Docker   true
 ```
-git clone https://github.com/nexenta/nexenta-docker-driver && cd nexenta-docker-driver
+
+## Usage
+
+Create Docker volume `testvolume`:
+```bash
+docker volume create -d nexenta/nexentastor-nfs-plugin:1.0.0 --name=testvolume
 ```
-2) Copy nvd.json.example to /etc/nvd/nvd.json and change values according to your NexentaStor setup
+**Note**: This operation will create filesystem on NexentaStore
+
+Run container which uses created volume `testvolume`:
+```bash
+docker run -v testvolume:/data -it --rm ubuntu /bin/bash
 ```
-mkdir /etc/nvd
-cp nvd.json.example /etc/nvd/nvd.json
+
+Remove Docker volume `testvolume`:
+```bash
+docker volume remove testvolume
 ```
-3) Install and run the plugin
+**Note**: This operation will remove filesystem from NexentaStore
+
+## Uninstall
+
+```bash
+# disable driver
+docker plugin disable nexenta/nexentastor-nfs-plugin:1.0.0
+
+# remove driver
+docker plugin remove nexenta/nexentastor-nfs-plugin:1.0.0
 ```
+
+## Development
+
+Commits should follow [Conventional Commits Spec](https://conventionalcommits.org).
+
+### Build
+
+```bash
+# build with development tag
 make
+
+# build with production tag
+make build-production
+
+# update deps
+~/go/bin/dep ensure
 ```
-4) Use plugin to create docker volumes
+
+### Check version
+
+```bash
+./bin/nvd --version
 ```
-docker volume create -d nexenta/nexentastor-nfs-plugin:stable --name=testvolume
-docker run -v testvolume:/Data -it ubuntu /bin/bash
+
+### Publish
+
+```bash
+# push the latest built container to the local registry (see `Makefile`)
+make container-push-local
+
+# push the latest built container to hub.docker.com
+make container-push-remote
 ```
+
+### Release
+
+```bash
+# go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
+git-chglog --next-tag X.X.X -o CHANGELOG.md
+git add CHANGELOG.md
+git commit -m "release X.X.X"
+git push
+git co -b X.X.X
+make build-production && make push-production
+vim README.md # edit versions
+git add README.md
+git ci -m "release X.X.X"
+git push
+git tag vX.X.X
+git push --tags
+```
+
+## Troubleshooting
+
+- Show installed drivers:
+  ```bash
+  docker plugin list
+  ```
+- Driver logs
+  ```bash
+  # log file
+  tail -f /var/lib/docker/plugins/*/rootfs/var/log/nvd.log
+
+  # system journal
+  journalctl -f -u docker.service
+  ```
+- Check mounts on host
+  ```bash
+  mount | grep /var/lib/docker/plugins
+  mount | grep NEXENTASTOR_DATA_IP_FROM_CONFIG_FILE
+  ```
+- Configure Docker to trust insecure registries:
+  ```bash
+  # add `{"insecure-registries":["10.3.199.92:5000"]}` to:
+  vim /etc/docker/daemon.json
+  service docker restart
+  ```
