@@ -141,6 +141,7 @@ func (d *Driver) Create(req *volume.CreateRequest) error {
 
 	nsProvider, err := d.resolveNS(datasetPath)
 	if err != nil {
+		l.Error(err)
 		return err
 	}
 
@@ -193,6 +194,7 @@ func (d *Driver) Remove(req *volume.RemoveRequest) error {
 
 	nsProvider, err := d.resolveNS(volumePath)
 	if err != nil {
+		l.Error(err)
 		return err
 	}
 
@@ -223,6 +225,7 @@ func (d *Driver) List() (*volume.ListResponse, error) {
 
 	nsProvider, err := d.resolveNS(datasetPath)
 	if err != nil {
+		l.Error(err)
 		return nil, err
 	}
 
@@ -272,6 +275,7 @@ func (d *Driver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 
 	nsProvider, err := d.resolveNS(volumePath)
 	if err != nil {
+		l.Error(err)
 		return nil, err
 	}
 
@@ -339,6 +343,7 @@ func (d *Driver) Mount(req *volume.MountRequest) (*volume.MountResponse, error) 
 
 	nsProvider, err := d.resolveNS(volumePath)
 	if err != nil {
+		l.Error(err)
 		return nil, err
 	}
 
@@ -378,6 +383,7 @@ func (d *Driver) Mount(req *volume.MountRequest) (*volume.MountResponse, error) 
 		err = fmt.Errorf("FailedPrecondition: Unsupported mount filesystem type: '%s'", fsType)
 	}
 	if err != nil {
+		l.Error(err)
 		return nil, err
 	}
 
