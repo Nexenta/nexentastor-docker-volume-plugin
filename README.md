@@ -120,6 +120,18 @@ make build-production
 ./bin/nvd --version
 ```
 
+### Debug
+
+Send requests to the driver:
+```bash
+# driver container id can be found in `journalctl -f -u docker.service` output
+curl -X POST \
+    -d '{}' \
+    -H "Content-Type: application/json" \
+    --unix-socket /run/docker/plugins/%ID%/nvd.sock \
+    http://localhost/VolumeDriver.List
+```
+
 ### Publish
 
 ```bash

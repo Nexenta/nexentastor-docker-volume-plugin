@@ -18,7 +18,7 @@ set -e
 set -x
 
 # config
-PLUGIN="nexenta/nexentastor-nfs-plugin:master"
+PLUGIN="10.3.199.92:5000/nexentastor-nfs-plugin:1.0.0"
 VOLUME_NAME="testvolume"
 MOUNT_SOURCE="10.3.199.243:/spool01/dataset/${VOLUME_NAME}"
 MOUNT_TARGET="testmount"

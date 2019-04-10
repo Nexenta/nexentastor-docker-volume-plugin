@@ -11,7 +11,7 @@ REGISTRY_DEVELOPMENT ?= 10.3.199.92:5000
 
 VERSION ?= $(shell git rev-parse --abbrev-ref HEAD | sed -e "s/.*\\///")
 COMMIT ?= $(shell git rev-parse HEAD | cut -c 1-7)
-DATETIME ?= $(shell date +'%F_%T')
+DATETIME ?= $(shell date -u +'%F_%T')
 LDFLAGS ?= \
 	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.Version=${VERSION} \
 	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.Commit=${COMMIT} \
@@ -25,14 +25,20 @@ build-go:
 	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/${DRIVER_EXECUTABLE_NAME} -ldflags "${LDFLAGS}" ./cmd
 
 .PHONY: plugin-rootfs
-ROOTFS_CONTAINER_ID = ""
 build-rootfs: clean
 	mkdir -p ./plugin/rootfs
-	cp config.json ./plugin/
-	docker build -f Dockerfile.rootfs -t ${IMAGE_NAME}_${VERSION}:rootfs .
-	export ROOTFS_CONTAINER_ID=$(shell docker create ${IMAGE_NAME}_${VERSION}:rootfs); \
-	docker export $${ROOTFS_CONTAINER_ID} | tar -x -C ./plugin/rootfs; \
-	docker rm -vf $${ROOTFS_CONTAINER_ID}
+	docker build --no-cache -f Dockerfile.rootfs -t ${IMAGE_NAME}_${VERSION}:rootfs .
+	docker create ${IMAGE_NAME}_${VERSION}:rootfs > /tmp/.nvdContainerId
+	@echo "Temporary container ID:"
+	@cat /tmp/.nvdContainerId
+	docker export $$(cat /tmp/.nvdContainerId) | tar -x -C ./plugin/rootfs
+	docker rm $$(cat /tmp/.nvdContainerId)
+	rm /tmp/.nvdContainerId
+	@echo "---------------------------------------"
+	@echo "Plugin version:"
+	@./plugin/rootfs/bin/${DRIVER_EXECUTABLE_NAME} --version
+	@echo "Current UTC time: ($$(date -u +'%F_%T'))"
+	@echo "---------------------------------------"
 
 .PHONY: build-development
 build-development: uninstall-development build-rootfs
@@ -67,4 +73,6 @@ uninstall-production:
 .PHONY: clean
 clean:
 	go clean -r -x
-	-rm -rf bin plugin
+	-rm -rf ./bin
+	-rm -rf ./plugin
+	-docker rmi -f ${IMAGE_NAME}_${VERSION}:rootfs

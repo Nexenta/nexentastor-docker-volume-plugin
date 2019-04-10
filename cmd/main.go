@@ -35,7 +35,7 @@ func main() {
 	// init logger
 	l := initLogger()
 
-	l.Info("started...")
+	l.Infof("%s@%s-%s (%s) started...", driver.Name, driver.Version, driver.Commit, driver.DateTime)
 	l.Info("run driver with CLI options:")
 	l.Infof("- Config file: '%s'", *configFile)
 

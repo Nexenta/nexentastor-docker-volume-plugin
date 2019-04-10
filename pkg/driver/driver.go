@@ -95,16 +95,18 @@ func (d *Driver) refreshConfig() error {
 func (d *Driver) resolveNS(datasetPath string) (ns.ProviderInterface, error) {
 	nsProvider, err := d.nsResolver.Resolve(datasetPath)
 	if err != nil {
-		code := "Internal Error"
-		if ns.IsNotExistNefError(err) {
-			code = "Not Found"
+		humanizedErr := fmt.Errorf("Cannot resolve '%s' on any NexentaStor(s): %s", datasetPath, err)
+
+		// propagate NefError
+		nefCode := ns.GetNefErrorCode(err)
+		if nefCode != "" { // TODO add IsNefError() method
+			return nil, &ns.NefError{
+				Err:  humanizedErr,
+				Code: nefCode,
+			}
 		}
-		return nil, fmt.Errorf(
-			"%s: Cannot resolve '%s' on any NexentaStor(s): %s",
-			code,
-			datasetPath,
-			err,
-		)
+
+		return nil, humanizedErr
 	}
 	return nsProvider, nil
 }
@@ -194,6 +196,10 @@ func (d *Driver) Remove(req *volume.RemoveRequest) error {
 
 	nsProvider, err := d.resolveNS(volumePath)
 	if err != nil {
+		if ns.IsNotExistNefError(err) {
+			l.Infof("Filesystem '%v' already doesn't exist, return OK response", volumePath)
+			return nil
+		}
 		l.Error(err)
 		return err
 	}
@@ -275,6 +281,10 @@ func (d *Driver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 
 	nsProvider, err := d.resolveNS(volumePath)
 	if err != nil {
+		if ns.IsNotExistNefError(err) {
+			l.Infof("Filesystem '%v' doesn't exist, return empty response", volumePath)
+			return nil, nil
+		}
 		l.Error(err)
 		return nil, err
 	}
@@ -326,13 +336,19 @@ func (d *Driver) Mount(req *volume.MountRequest) (*volume.MountResponse, error) 
 		return nil, fmt.Errorf("InvalidArgument: req.Name must be provided")
 	}
 
+	//TODO use for bind mounts
+	containerID := req.ID
+	if len(containerID) == 0 {
+		return nil, fmt.Errorf("InvalidArgument: req.ID must be provided")
+	}
+
 	// read and validate config
 	err := d.refreshConfig()
 	if err != nil {
 		return nil, fmt.Errorf("FailedPrecondition: Cannot use config file: %s", err)
 	}
 
-	// path on host file system
+	// path under "PropagatedMount" config parameter
 	targetPath := filepath.Join(driverMountPointsRoot, volumeName)
 
 	//TODO get dataset path from runtime params, set default if not specified
@@ -511,13 +527,19 @@ func (d *Driver) Unmount(req *volume.UnmountRequest) error {
 		return fmt.Errorf("InvalidArgument: req.Name must be provided")
 	}
 
+	//TODO use for bind mounts
+	containerID := req.ID
+	if len(containerID) == 0 {
+		return fmt.Errorf("InvalidArgument: req.ID must be provided")
+	}
+
 	// read and validate config
 	err := d.refreshConfig()
 	if err != nil {
 		return fmt.Errorf("FailedPrecondition: Cannot use config file: %s", err)
 	}
 
-	// path on host file system
+	// path under "PropagatedMount" config parameter
 	targetPath := filepath.Join(driverMountPointsRoot, volumeName)
 
 	//TODO get dataset path from runtime params, set default if not specified
