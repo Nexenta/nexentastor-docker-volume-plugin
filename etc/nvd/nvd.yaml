@@ -4,7 +4,7 @@
 restIp: https://10.3.199.243:8443 # [required] NexentaStor REST API endpoint(s)
 username: admin                   # [required] NexentaStor REST API username
 password: Nexenta@1               # [required] NexentaStor REST API password
-defaultDataset: spool01/dataset   # [required] default 'pool/dataset' to use
-defaultDataIp: 10.3.199.243       # [required] default NexentaStor data IP or HA VIP
+defaultDataset: spool01/dataset   # [required] 'pool/dataset' to use
+defaultDataIp: 10.3.199.243       # [required] NexentaStor data IP or HA VIP
 #defaultMountOptions: noatime     # mount options (mount -o ...)
 #debug: true                      # more logs (true/false)

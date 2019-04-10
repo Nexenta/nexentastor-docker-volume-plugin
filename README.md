@@ -31,8 +31,8 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
    restIp: https://10.3.3.4:8443,https://10.3.3.5:8443 # [required] NexentaStor REST API endpoint(s)
    username: admin                                     # [required] NexentaStor REST API username
    password: p@ssword                                  # [required] NexentaStor REST API password
-   defaultDataset: spool01/dataset                     # [required] default 'pool/dataset' to use
-   defaultDataIp: 20.20.20.21                          # [required] default NexentaStor data IP or HA VIP
+   defaultDataset: spool01/dataset                     # [required] dataset to use ('pool/dataset')
+   defaultDataIp: 20.20.20.21                          # [required] data IP or HA VIP
    #defaultMountOptions: noatime                       # mount options (mount -o ...)
    #debug: true                                        # more logs (true/false)
    ```
@@ -44,48 +44,46 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
    | `restIp`              | NexentaStor REST API endpoint(s); `,` to separate cluster nodes | yes      | `https://10.3.3.4:8443` |
    | `username`            | NexentaStor REST API username                                   | yes      | `admin`                 |
    | `password`            | NexentaStor REST API password                                   | yes      | `p@ssword`              |
-   | `defaultDataset`      | parent dataset for driver's filesystems [pool/dataset]          | yes      | `spool01/dataset`       |
+   | `defaultDataset`      | parent dataset for driver's filesystems ("pool/dataset")        | yes      | `spool01/dataset`       |
    | `defaultDataIp`       | NexentaStor data IP or HA VIP for mounting shares               | yes      | `20.20.20.21`           |
-   | `defaultMountOptions` | NFS mount options: `mount -o ...` (default: "")                 | no       | `noatime,nosuid`        |
+   | `defaultMountOptions` | NFS mount options: `mount -o ...`<br>(default: "")              | no       | `noatime,nosuid`        |
    | `debug`               | print more logs (default: false)                                | no       | `true`                  |
 
    **Note**: parameter `restIp` can point on a single NexentaStor appliance or on each of the nodes of HA cluster.
 
 3. Install volume driver:
-   ```bash
+   ```
    docker plugin install nexenta/nexentastor-nfs-plugin:1.0.0
    ```
 4. Enable volume driver:
-   ```bash
+   ```
    docker plugin enable nexenta/nexentastor-nfs-plugin:1.0.0
    ```
 
 Volume driver should be listed after installation:
 
-```bash
+```
 $ docker plugin list
-ID                  NAME                                   DESCRIPTION                            ENABLED
-b227326b403d        nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver for Docker   true
+ID             NAME                                   DESCRIPTION                            ENABLED
+b227326b403d   nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver for Docker   true
 ```
 
 ## Usage
 
-Create Docker volume `testvolume`:
-```bash
-docker volume create -d nexenta/nexentastor-nfs-plugin:1.0.0 --name=testvolume
-```
-**Note**: This operation will create filesystem on NexentaStore
-
-Run container which uses created volume `testvolume`:
-```bash
-docker run -v testvolume:/data -it --rm ubuntu /bin/bash
-```
-
-Remove Docker volume `testvolume`:
-```bash
-docker volume remove testvolume
-```
-**Note**: This operation will remove filesystem from NexentaStore
+- Create Docker volume `testvolume`:
+   ```bash
+   docker volume create -d nexenta/nexentastor-nfs-plugin:1.0.0 --name=testvolume
+   ```
+   **Note**: This operation will create filesystem on NexentaStore.
+- Run container which uses created volume `testvolume`:
+   ```bash
+   docker run -v testvolume:/data -it --rm ubuntu /bin/bash
+   ```
+- Remove Docker volume `testvolume`:
+   ```bash
+   docker volume remove testvolume
+   ```
+   **Note**: This operation will remove filesystem from NexentaStore.
 
 ## Uninstall
 
