@@ -72,7 +72,7 @@ uninstall-production:
 
 .PHONY: clean
 clean:
-	go clean -r -x
+	-go clean -r -x
 	-rm -rf ./bin
 	-rm -rf ./plugin
 	-docker rmi -f ${IMAGE_NAME}_${VERSION}:rootfs

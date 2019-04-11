@@ -11,7 +11,6 @@ pipeline {
         stage('Build development') {
             steps {
                 sh 'make build-development'
-                sh 'make uninstall-development'
             }
         }
         stage('Push [local registry]') {
@@ -19,13 +18,21 @@ pipeline {
                 sh 'make push-development'
             }
         }
+        stage('Tests') {
+            steps {
+                sh 'No tests found'
+                sh 'exit 1'
+            }
+        }
         stage('Build production') {
             steps {
                 sh 'make build-production'
-                sh 'make uninstall-production'
             }
         }
         stage('Push [hub.docker.com]') {
+            when {
+                branch 'master'
+            }
             environment {
                 DOCKER = credentials('docker-hub-credentials')
             }
