@@ -101,21 +101,21 @@ Commits should follow [Conventional Commits Spec](https://conventionalcommits.or
 
 ### Build
 
+Build and push commands take Git branch as a plugin version to build.
+
 ```bash
-# build with development tag
-make
+# build with development tag (default for `make` w/o params)
+make build-development
 
 # build with production tag
 make build-production
 
 # update deps
+# go get -u github.com/golang/dep/cmd/dep
 ~/go/bin/dep ensure
-```
 
-### Check version
-
-```bash
-./bin/nvd --version
+# check built version
+./plugin/rootfs/bin/nvd --version
 ```
 
 ### Debug
@@ -134,18 +134,22 @@ curl -X POST \
 
 ```bash
 # push the latest built container to the local registry (see `Makefile`)
-make container-push-local
+make push-development
 
 # push the latest built container to hub.docker.com
-make container-push-remote
+make push-production
 ```
 
 ### Release
 
+All development happens in `master` branch,
+when it's time to publish a new version,
+new branch should be created.
+
 ```bash
 # go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
 git-chglog --next-tag X.X.X -o CHANGELOG.md
-git add CHANGELOG.md
+git add CHANGELOG.md # edit it before commit
 git commit -m "release X.X.X"
 git push
 git co -b X.X.X
@@ -172,7 +176,7 @@ git push --tags
   # system journal
   journalctl -f -u docker.service
   ```
-- Check mounts on host
+- Check mounts exist on host
   ```bash
   mount | grep /var/lib/docker/plugins
   mount | grep NEXENTASTOR_DATA_IP_FROM_CONFIG_FILE
