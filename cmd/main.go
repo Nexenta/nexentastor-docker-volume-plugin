@@ -28,16 +28,16 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Printf("%s@%s-%s (%s)\n", driver.Name, driver.Version, driver.Commit, driver.DateTime)
+		fmt.Printf("%s@%s-%s (%s)\n", config.Name, config.Version, config.Commit, config.DateTime)
 		os.Exit(0)
 	}
 
 	// init logger
 	l := initLogger()
 
-	l.Infof("%s@%s-%s (%s) started...", driver.Name, driver.Version, driver.Commit, driver.DateTime)
+	l.Infof("%s@%s-%s (%s) started...", config.Name, config.Version, config.Commit, config.DateTime)
 	l.Info("run driver with CLI options:")
-	l.Infof("- Config file: '%s'", *configFile)
+	l.Infof("- config file: '%s'", *configFile)
 
 	// initial read and validate config file
 	cfg, err := config.New(*configFile)
@@ -55,9 +55,10 @@ func main() {
 	l.Info("config file options:")
 	l.Infof("- NexentaStor address(es): %s", cfg.Address)
 	l.Infof("- NexentaStor username: %s", cfg.Username)
-	l.Infof("- Default dataset: %s", cfg.DefaultDataset)
-	l.Infof("- Default data IP: %s", cfg.DefaultDataIP)
-	l.Infof("- Debug: %t", cfg.Debug)
+	l.Infof("- default dataset: %s", cfg.DefaultDataset)
+	l.Infof("- default data IP: %s", cfg.DefaultDataIP)
+	l.Infof("- default mount options: %s", cfg.DefaultMountOptions)
+	l.Infof("- debug: %t", cfg.Debug)
 
 	// create driver
 	d, err := driver.New(driver.Args{
@@ -74,13 +75,13 @@ func main() {
 	if err != nil {
 		l.Fatalf("Failed to start server: %s", err)
 	} else {
-		l.Info("Driver process terminated.")
+		l.Info("driver process terminated.")
 	}
 }
 
 func initLogger() *logrus.Entry {
 	l := logrus.New().WithFields(logrus.Fields{
-		"driver": fmt.Sprintf("%s@%s", driver.Name, driver.Version),
+		"driver": fmt.Sprintf("%s@%s", config.Name, config.Version),
 		"cmp":    "Main",
 	})
 
@@ -90,10 +91,9 @@ func initLogger() *logrus.Entry {
 		FieldsOrder: []string{"driver", "cmp", "ns", "func", "req", "reqID", "job"},
 	})
 
-	logFile := "/var/log/nvd.log"
-	logFileWriter, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY, 0666)
+	logFileWriter, err := os.OpenFile(config.LogFile, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		l.Fatal("log")
+		l.Warnf("failed to create log file '%s' inside the container: %s", config.LogFile, err)
 		l.Logger.SetOutput(os.Stdout)
 		return l
 	}

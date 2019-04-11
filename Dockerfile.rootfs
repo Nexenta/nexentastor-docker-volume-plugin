@@ -14,4 +14,5 @@ RUN make build-go
 FROM alpine:3.9.2
 COPY --from=builder /go/src/github.com/Nexenta/nexenta-docker-driver/bin/nvd /bin/nvd
 RUN /bin/nvd --version
+RUN mkdir -p /mnt/nvd
 ENTRYPOINT ["bin/sh"]

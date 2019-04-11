@@ -11,19 +11,40 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const addressRegExp = "^https?://[^:]+:[0-9]{1,5}$"
+// Version - driver version, to set version set flags:
+// go build -ldflags "-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Version=1.0.0"
+var Version string
+
+// Commit - driver last commit, to set commit set flags:
+// go build -ldflags "-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Commit=..."
+var Commit string
+
+// DateTime - driver build datetime, to set commit set flags:
+// go build -ldflags "-X github.com/Nexenta/nexenta-docker-driver/pkg/config.DateTime=..."
+var DateTime string
+
+// persistent driver's config
+const (
+	// Name - driver's executable name, must be the same as in `Makefile`
+	Name = "nvd"
+
+	// DriverMountPointsRoot - path inside the driver container to mount volumes
+	// this path must be propagated to host via "propogatedmount" parameter in driver's "config.json"
+	// TODO read this parameter from driver's "config.json" file "propogatedmount" parameter?
+	DriverMountPointsRoot = "/mnt/nvd"
+
+	// path to a log file inside the driver's container
+	LogFile = "/var/log/nvd.log"
+)
 
 // supported mount filesystem types
 const (
 	// FsTypeNFS - to mount NS filesystem over NFS
 	FsTypeNFS string = "nfs"
-
-	// FsTypeCIFS - to mount NS filesystem over SMB
-	FsTypeCIFS string = "cifs"
 )
 
-// SuppertedFsTypeList - list of supported filesystem types to mount
-var SuppertedFsTypeList = []string{FsTypeNFS, FsTypeCIFS}
+// a valid NS REST endpoint
+const addressRegExp = "^https?://[^:]+:[0-9]{1,5}$"
 
 // Config - driver config from file
 type Config struct {
@@ -34,18 +55,28 @@ type Config struct {
 	DefaultDataIP       string `yaml:"defaultDataIp,omitempty"`
 	Debug               bool   `yaml:"debug,omitempty"`
 	DefaultMountOptions string `yaml:"defaultMountOptions,omitempty"`
-	//DefaultMountFsType string `yaml:"defaultMountFsType,omitempty"` //TODO
 
 	filePath    string
 	lastMobTime time.Time
 }
 
-// GetFilePath - get filepath of found config file
+// New creates config instance
+func New(configFilePath string) (*Config, error) {
+	// read config file
+	config := &Config{filePath: configFilePath}
+	if _, err := config.Refresh(); err != nil {
+		return nil, fmt.Errorf("Cannot refresh config from file '%s': %s", configFilePath, err)
+	}
+
+	return config, nil
+}
+
+// GetFilePath gets filepath of found config file
 func (c *Config) GetFilePath() string {
 	return c.filePath
 }
 
-// Refresh - read and validate config, return `true` if config has been changed
+// Refresh reads and validates config, returns `true` if config has been changed
 func (c *Config) Refresh() (changed bool, err error) {
 	if c.filePath == "" {
 		return false, fmt.Errorf("Cannot read config file, filePath not specified")
@@ -78,7 +109,7 @@ func (c *Config) Refresh() (changed bool, err error) {
 	return changed, nil
 }
 
-// Validate - validate current config
+// Validate validates current config
 func (c *Config) Validate() error {
 	var errors []string
 
@@ -104,28 +135,10 @@ func (c *Config) Validate() error {
 	if c.Password == "" {
 		errors = append(errors, fmt.Sprintf("parameter 'password' is missed"))
 	}
-	//TODO
-	// if c.DefaultMountFsType != "" && !arrays.ContainsString(SuppertedFsTypeList, c.DefaultMountFsType) {
-	// 	errors = append(
-	// 		errors,
-	// 		fmt.Sprintf("parameter 'defaultMountFsType' must be omitted or one of: [%s, %s]", FsTypeNFS, FsTypeCIFS),
-	// 	)
-	// }
 
 	if len(errors) != 0 {
 		return fmt.Errorf("Bad format, fix following issues: %s", strings.Join(errors, "; "))
 	}
 
 	return nil
-}
-
-// New - create config instance
-func New(configFilePath string) (*Config, error) {
-	// read config file
-	config := &Config{filePath: configFilePath}
-	if _, err := config.Refresh(); err != nil {
-		return nil, fmt.Errorf("Cannot refresh config from file '%s': %s", configFilePath, err)
-	}
-
-	return config, nil
 }

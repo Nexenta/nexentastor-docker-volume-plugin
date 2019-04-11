@@ -3,7 +3,7 @@
 DRIVER_NAME = nexentastor-nfs-plugin
 IMAGE_NAME ?= ${DRIVER_NAME}
 
-#TODO rename?
+# must be the same as in `config.Name`
 DRIVER_EXECUTABLE_NAME = nvd
 
 REGISTRY_PRODUCTION ?= nexenta
@@ -13,9 +13,9 @@ VERSION ?= $(shell git rev-parse --abbrev-ref HEAD | sed -e "s/.*\\///")
 COMMIT ?= $(shell git rev-parse HEAD | cut -c 1-7)
 DATETIME ?= $(shell date -u +'%F_%T')
 LDFLAGS ?= \
-	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.Version=${VERSION} \
-	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.Commit=${COMMIT} \
-	-X github.com/Nexenta/nexenta-docker-driver/pkg/driver.DateTime=${DATETIME}
+	-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Version=${VERSION} \
+	-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Commit=${COMMIT} \
+	-X github.com/Nexenta/nexenta-docker-driver/pkg/config.DateTime=${DATETIME}
 
 .PHONY: all
 all: build-development
