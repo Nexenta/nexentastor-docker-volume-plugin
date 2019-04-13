@@ -441,15 +441,16 @@ func (d *Driver) mountNFSShare(filesystem ns.Filesystem, dataIP, targetPath stri
 	} else if existingMount != nil {
 		d.log.Debugf("existing mount found: %+v", existingMount)
 
-		if existingMount.Device != mountSource {
-			return fmt.Errorf(
-				"Mount point '%s' already exists and cannot be used for a new container, "+
-					"because mount sources are different. Needed: '%s', already mounted: '%s'",
-				targetPath,
-				mountSource,
-				existingMount.Device,
-			)
-		}
+		// TODO this is does not work if user changes fs mount point on NS side
+		// if existingMount.Device != mountSource {
+		// 	return fmt.Errorf(
+		// 		"Mount point '%s' already exists and cannot be used for a new container, "+
+		// 			"because mount sources are different. Needed: '%s', already mounted: '%s'",
+		// 		targetPath,
+		// 		mountSource,
+		// 		existingMount.Device,
+		// 	)
+		// }
 
 		// compare mount options
 		missedOptions := []string{}
