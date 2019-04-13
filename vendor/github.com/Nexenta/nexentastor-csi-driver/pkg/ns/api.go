@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 // LogIn - log in to NexentaStor API and get auth token
@@ -17,7 +16,7 @@ func (nsp *Provider) LogIn() error {
 		Password: nsp.Password,
 	}
 
-	_, bodyBytes, err := nsp.RestClient.Send(http.MethodPost, "auth/login", data)
+	_, bodyBytes, err := nsp.RestClient.Send("POST", "auth/login", data)
 	if err != nil {
 		// try to parse error from rest response
 		nefError := nsp.parseNefError(bodyBytes, "Login request")
@@ -49,7 +48,7 @@ func (nsp *Provider) LogIn() error {
 
 // GetLicense - return NexentaStor license
 func (nsp *Provider) GetLicense() (license License, err error) {
-	err = nsp.sendRequestWithStruct(http.MethodGet, "/settings/license", nil, &license)
+	err = nsp.sendRequestWithStruct("GET", "/settings/license", nil, &license)
 	return license, err
 }
 
@@ -60,7 +59,7 @@ func (nsp *Provider) GetPools() ([]Pool, error) {
 	})
 
 	response := nefStoragePoolsResponse{}
-	err := nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &response)
+	err := nsp.sendRequestWithStruct("GET", uri, nil, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +75,7 @@ func (nsp *Provider) GetFilesystemAvailableCapacity(path string) (int64, error) 
 	})
 
 	response := nefStorageFilesystemsResponse{}
-	err := nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &response)
+	err := nsp.sendRequestWithStruct("GET", uri, nil, &response)
 	if err != nil {
 		return 0, err
 	}
@@ -101,13 +100,13 @@ func (nsp *Provider) GetFilesystem(path string) (filesystem Filesystem, err erro
 	})
 
 	response := nefStorageFilesystemsResponse{}
-	err = nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &response)
+	err = nsp.sendRequestWithStruct("GET", uri, nil, &response)
 	if err != nil {
 		return filesystem, err
 	}
 
 	if len(response.Data) == 0 {
-		return filesystem, &NefError{Code: "ENOENT", Err: fmt.Errorf("Filesystem '%s' not found", path)}
+		return filesystem, fmt.Errorf("Filesystem '%s' not found", path)
 	}
 
 	return response.Data[0], nil
@@ -121,7 +120,7 @@ func (nsp *Provider) GetFilesystems(parent string) ([]Filesystem, error) {
 	})
 
 	response := nefStorageFilesystemsResponse{}
-	err := nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &response)
+	err := nsp.sendRequestWithStruct("GET", uri, nil, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -150,101 +149,18 @@ func (nsp *Provider) CreateFilesystem(params CreateFilesystemParams) error {
 		return fmt.Errorf("Parameter 'CreateFilesystemParams.Path' is required")
 	}
 
-	//TODO consider to add option https://jira.nexenta.com/browse/NEX-17476?focusedCommentId=154590
-
-	return nsp.sendRequest(http.MethodPost, "/storage/filesystems", params)
+	return nsp.sendRequest("POST", "/storage/filesystems", params)
 }
 
 // DestroyFilesystem - destroy filesystem by path
-func (nsp *Provider) DestroyFilesystem(path string, destroySnapshots bool) error {
+func (nsp *Provider) DestroyFilesystem(path string) error {
 	if path == "" {
 		return fmt.Errorf("Filesystem path is required")
 	}
 
-	destroySnapshotsString := "false"
-	if destroySnapshots {
-		destroySnapshotsString = "true"
-	}
+	uri := fmt.Sprintf("/storage/filesystems/%s", url.PathEscape(path))
 
-	uri := nsp.RestClient.BuildURI(
-		fmt.Sprintf("/storage/filesystems/%s", url.PathEscape(path)),
-		map[string]string{
-			"force":     "true",
-			"snapshots": destroySnapshotsString,
-		},
-	)
-
-	return nsp.sendRequest(http.MethodDelete, uri, nil)
-}
-
-// DestroyFilesystemWithClones - destroy filesystem that has or may have clones
-// Method promotes filesystem's most recent snapshots and then delete the filesystem
-func (nsp *Provider) DestroyFilesystemWithClones(path string, destroySnapshots bool) (err error) {
-	l := nsp.Log.WithField("func", "DestroyFilesystemWithClones()")
-
-	maxAttemptCount := 3
-
-	for i := 0; i < maxAttemptCount; i++ {
-		err = nsp.DestroyFilesystem(path, destroySnapshots)
-		if err == nil || IsNotExistNefError(err) {
-			return err
-		} else if !IsAlreadyExistNefError(err) {
-			continue
-		}
-
-		// if here then filesystem has dependent clones (EEXIST error on deletion),
-		// need promote the most recent clone to make the filesystem independent
-
-		snapshots, err := nsp.GetSnapshots(path, true)
-		if err != nil {
-			l.Warnf("filesystem '%s' has clones, but snapshots list was failed: %s (trying again...)", path, err)
-			continue
-		}
-
-		var maxCreationTxg int
-		var mostRecentClone string
-		for _, s := range snapshots {
-			// to get "clones" and "creationTxg" fields that are not presented int the list response
-			snapshot, err := nsp.GetSnapshot(s.Path)
-			if err != nil {
-				l.Warnf(
-					"filesystem '%s' has clones, but getting snapshot '%s' was failed: %s (trying again...)",
-					path,
-					s.Path,
-					err,
-				)
-				continue
-			}
-			creationTxg, err := strconv.Atoi(snapshot.CreationTxg)
-			if len(snapshot.Clones) > 0 && creationTxg > maxCreationTxg {
-				mostRecentClone = snapshot.Clones[0]
-			}
-		}
-
-		if mostRecentClone == "" {
-			l.Warnf("filesystem '%s' is supposted to has clones, but it doesn't, trying again...", path)
-			continue
-		}
-
-		l.Infof("filesystem '%s' has clone '%s', promote it to free up the filesystem...", path, mostRecentClone)
-		err = nsp.PromoteFilesystem(mostRecentClone)
-		if err != nil {
-			l.Warnf("failed to promote filesystem clone '%s': %v (trying again...)", mostRecentClone, err)
-		}
-	}
-
-	return fmt.Errorf("Failed to delete filesystem '%s' x%d times, last error: %v", path, maxAttemptCount, err)
-}
-
-// PromoteFilesystem promotes a cloned filesystem to be no longer dependent on its original snapshot
-func (nsp *Provider) PromoteFilesystem(path string) error {
-	if path == "" {
-		return fmt.Errorf("Filesystem path is required")
-	}
-
-	uri := fmt.Sprintf("/storage/filesystems/%s/promote", url.PathEscape(path))
-
-	return nsp.sendRequest(http.MethodPost, uri, nil)
+	return nsp.sendRequest("DELETE", uri, nil)
 }
 
 // CreateNfsShareParams - params to create NFS share
@@ -273,7 +189,7 @@ func (nsp *Provider) CreateNfsShare(params CreateNfsShareParams) error {
 		},
 	}
 
-	return nsp.sendRequest(http.MethodPost, "nas/nfs", data)
+	return nsp.sendRequest("POST", "nas/nfs", data)
 }
 
 // DeleteNfsShare - destroy NFS chare by filesystem path
@@ -284,7 +200,7 @@ func (nsp *Provider) DeleteNfsShare(path string) error {
 
 	uri := fmt.Sprintf("/nas/nfs/%s", url.PathEscape(path))
 
-	return nsp.sendRequest(http.MethodDelete, uri, nil)
+	return nsp.sendRequest("DELETE", uri, nil)
 }
 
 // CreateSmbShareParams - params to create SMB share
@@ -305,7 +221,7 @@ func (nsp *Provider) CreateSmbShare(params CreateSmbShareParams) error {
 		return fmt.Errorf("CreateSmbShareParams.Filesystem is required")
 	}
 
-	return nsp.sendRequest(http.MethodPost, "nas/smb", params)
+	return nsp.sendRequest("POST", "nas/smb", params)
 }
 
 // GetSmbShareName - get share name for filesystem that shared over SMB
@@ -320,7 +236,7 @@ func (nsp *Provider) GetSmbShareName(path string) (string, error) {
 	)
 
 	response := nefNasSmbResponse{}
-	err := nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &response)
+	err := nsp.sendRequestWithStruct("GET", uri, nil, &response)
 	if err != nil {
 		return "", err
 	}
@@ -336,7 +252,7 @@ func (nsp *Provider) DeleteSmbShare(path string) error {
 
 	uri := fmt.Sprintf("/nas/smb/%s", url.PathEscape(path))
 
-	return nsp.sendRequest(http.MethodDelete, uri, nil)
+	return nsp.sendRequest("DELETE", uri, nil)
 }
 
 // SetFilesystemACL - set filesystem ACL, so NFS share can allow user to write w/o checking UNIX user uid
@@ -364,97 +280,7 @@ func (nsp *Provider) SetFilesystemACL(path string, aclRuleSet ACLRuleSet) error 
 		Permissions: permissions,
 	}
 
-	return nsp.sendRequest(http.MethodPost, uri, data)
-}
-
-// CreateSnapshotParams - params to create snapshot
-type CreateSnapshotParams struct {
-	// snapshot path w/o leading slash
-	Path string `json:"path"`
-}
-
-// CreateSnapshot - create snapshot by filesystem path
-func (nsp *Provider) CreateSnapshot(params CreateSnapshotParams) error {
-	if len(params.Path) == 0 {
-		return fmt.Errorf("Parameter 'CreateSnapshotParams.Path' is required")
-	}
-
-	return nsp.sendRequest(http.MethodPost, "/storage/snapshots", params)
-}
-
-// GetSnapshot - get snapshot by its path
-// path - full path to snapshot w/o leading slash (e.g. "p/d/fs@s")
-func (nsp *Provider) GetSnapshot(path string) (snapshot Snapshot, err error) {
-	if path == "" {
-		return snapshot, fmt.Errorf("Snapshot path is empty")
-	}
-
-	uri := nsp.RestClient.BuildURI(fmt.Sprintf("/storage/snapshots/%s", url.PathEscape(path)), map[string]string{
-		"fields": "path,name,parent,creationTime,clones,creationTxg",
-		//TODO return "bytesReferenced" and check on volume creation
-	})
-
-	err = nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &snapshot)
-
-	return snapshot, err
-}
-
-// GetSnapshots - get snapshot by its path
-func (nsp *Provider) GetSnapshots(volumePath string, recursive bool) ([]Snapshot, error) {
-	if len(volumePath) == 0 {
-		return []Snapshot{}, fmt.Errorf("Snapshots volume path is empty")
-	}
-
-	recursiveString := "false"
-	if recursive {
-		recursiveString = "true"
-	}
-
-	uri := nsp.RestClient.BuildURI("/storage/snapshots", map[string]string{
-		"parent":    volumePath,
-		"fields":    "path,name,parent,creationTime",
-		"recursive": recursiveString,
-	})
-
-	response := nefStorageSnapshotsResponse{}
-	err := nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &response)
-	if err != nil {
-		return []Snapshot{}, err
-	}
-
-	return response.Data, nil
-}
-
-// DestroySnapshot - destroy snapshot by path
-func (nsp *Provider) DestroySnapshot(path string) error {
-	if path == "" {
-		return fmt.Errorf("Snapshot path is required")
-	}
-
-	uri := fmt.Sprintf("/storage/snapshots/%s", url.PathEscape(path))
-
-	return nsp.sendRequest(http.MethodDelete, uri, nil)
-}
-
-// CloneSnapshotParams - params to clone snapshot to filesystem
-type CloneSnapshotParams struct {
-	// filesystem path w/o leading slash
-	TargetPath string `json:"targetPath"`
-}
-
-// CloneSnapshot clones snapshot to FS
-func (nsp *Provider) CloneSnapshot(path string, params CloneSnapshotParams) error {
-	if path == "" {
-		return fmt.Errorf("Snapshot path is required")
-	}
-
-	if params.TargetPath == "" {
-		return fmt.Errorf("Parameter 'CloneSnapshotParams.TargetPath' is required")
-	}
-
-	uri := fmt.Sprintf("/storage/snapshots/%s/clone", url.PathEscape(path))
-
-	return nsp.sendRequest(http.MethodPost, uri, params)
+	return nsp.sendRequest("POST", uri, data)
 }
 
 // GetRSFClusters - get RSF clusters from NS
@@ -464,7 +290,7 @@ func (nsp *Provider) GetRSFClusters() ([]RSFCluster, error) {
 	})
 
 	response := nefRsfClustersResponse{}
-	err := nsp.sendRequestWithStruct(http.MethodGet, uri, nil, &response)
+	err := nsp.sendRequestWithStruct("GET", uri, nil, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +302,7 @@ func (nsp *Provider) GetRSFClusters() ([]RSFCluster, error) {
 func (nsp *Provider) IsJobDone(jobID string) (bool, error) {
 	uri := fmt.Sprintf("/jobStatus/%s", jobID)
 
-	statusCode, bodyBytes, err := nsp.RestClient.Send(http.MethodGet, uri, nil)
+	statusCode, bodyBytes, err := nsp.RestClient.Send("GET", uri, nil)
 	if err != nil { // request failed
 		return false, err
 	} else if statusCode == http.StatusOK || statusCode == http.StatusCreated { // job is completed

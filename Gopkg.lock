@@ -10,14 +10,14 @@
   version = "v0.4.12"
 
 [[projects]]
-  digest = "1:ccf859bf02983671d7825bd183cd7ce34c803392865e66216fc2ed802c0e7c06"
+  digest = "1:c120fd7628cba3028e5c73701934dc16c205e403696b1a33661b4cb574dcce87"
   name = "github.com/Nexenta/nexentastor-csi-driver"
   packages = [
     "pkg/ns",
     "pkg/rest",
   ]
   pruneopts = "UT"
-  revision = "3c707caef101f679046c0c40dc7338a2beec63db"
+  revision = "1.0.1"
 
 [[projects]]
   digest = "1:1c934733c39b35a449ab93f7e49260730e6289f9a667ec7b7f519fe42b82b5a1"

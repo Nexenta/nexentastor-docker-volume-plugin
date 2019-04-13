@@ -19,40 +19,22 @@ const (
 
 // ProviderInterface - NexentaStor provider interface
 type ProviderInterface interface {
-	// system
-	LogIn() error
-	IsJobDone(jobID string) (bool, error)
-	GetLicense() (License, error)
-	GetRSFClusters() ([]RSFCluster, error)
-
-	// pools
-	GetPools() ([]Pool, error)
-
-	// filesystems
 	CreateFilesystem(params CreateFilesystemParams) error
-	DestroyFilesystem(path string, destroySnapshots bool) error
-	DestroyFilesystemWithClones(path string, destroySnapshots bool) error
-	SetFilesystemACL(path string, aclRuleSet ACLRuleSet) error
-	GetFilesystem(path string) (Filesystem, error)
-	GetFilesystems(parent string) ([]Filesystem, error)
-	GetFilesystemAvailableCapacity(path string) (int64, error)
-
-	// filesystems - nfs share
 	CreateNfsShare(params CreateNfsShareParams) error
-	DeleteNfsShare(path string) error
-
-	// filesystems - smb share
 	CreateSmbShare(params CreateSmbShareParams) error
+	DeleteNfsShare(path string) error
 	DeleteSmbShare(path string) error
+	DestroyFilesystem(path string) error
+	GetFilesystem(path string) (Filesystem, error)
+	GetFilesystemAvailableCapacity(path string) (int64, error)
+	GetFilesystems(parent string) ([]Filesystem, error)
+	GetLicense() (License, error)
+	GetPools() ([]Pool, error)
+	GetRSFClusters() ([]RSFCluster, error)
 	GetSmbShareName(path string) (string, error)
-
-	// snapshots
-	CreateSnapshot(params CreateSnapshotParams) error
-	DestroySnapshot(path string) error
-	GetSnapshot(path string) (Snapshot, error)
-	GetSnapshots(volumePath string, recursive bool) ([]Snapshot, error)
-	CloneSnapshot(path string, params CloneSnapshotParams) error
-	PromoteFilesystem(path string) error
+	IsJobDone(jobID string) (bool, error)
+	LogIn() error
+	SetFilesystemACL(path string, aclRuleSet ACLRuleSet) error
 }
 
 // Provider - NexentaStor API provider

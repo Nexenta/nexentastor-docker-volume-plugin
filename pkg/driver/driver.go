@@ -130,29 +130,56 @@ func (d *Driver) Create(req *volume.CreateRequest) error {
 	}
 	l.Infof("path '%s' resolved on %s NexentaStor", datasetPath, nsProvider)
 
+	filesystemAlreadyExist := false
 	err = nsProvider.CreateFilesystem(ns.CreateFilesystemParams{Path: filesystemPath})
 	if err != nil {
 		if ns.IsAlreadyExistNefError(err) {
-			l.Infof(
-				"done: NexentaStor filesystem '%s' already exists and can be used for '%s' volume",
+			filesystemAlreadyExist = true
+		} else {
+			return logError(l, fmt.Errorf(
+				"InternalError: Cannot create NexentaStor filesystem '%s' for volume '%s': %s",
 				filesystemPath,
 				volumeName,
-			)
-			return nil
+				err,
+			))
 		}
-		return logError(l, fmt.Errorf(
-			"InternalError: Cannot create NexentaStor filesystem '%s' for volume '%s': %s",
-			filesystemPath,
-			volumeName,
-			err,
-		))
 	}
 
-	l.Infof("done: filesystem '%s' has been created on NexentaStore for '%s' volume", filesystemPath, volumeName)
+	// get NexentaStor filesystem information
+	filesystem, err := nsProvider.GetFilesystem(filesystemPath)
+	if err != nil {
+		return logError(l, fmt.Errorf("InternalError: Cannot get filesystem '%s': %s", filesystemPath, err))
+	}
+
+	// check if NS filesystem is shared over NFS, create NFS share if it doesn't exist
+	if !filesystem.SharedOverNfs {
+		err := d.createNfsShare(nsProvider, filesystem)
+		if err != nil {
+			return logError(l, err)
+		}
+		l.Infof("filesystem '%s' has been shared over NFS", filesystemPath)
+	}
+
+	if filesystemAlreadyExist {
+		l.Infof(
+			"done: NexentaStor filesystem '%s' already exists and can be used for '%s' volume",
+			filesystemPath,
+			volumeName,
+		)
+	} else {
+		l.Infof(
+			"done: filesystem '%s' has been created on NexentaStore for '%s' volume",
+			filesystemPath,
+			volumeName,
+		)
+	}
+
 	return nil
 }
 
-// Remove Docker volume, removes filesystem on NS
+// Remove removes Docker volume.
+// This method does NOT remove filesystem from NS, `docker volume list`
+// will still show the volume in the list while filesystem is shared on NS.
 func (d *Driver) Remove(req *volume.RemoveRequest) error {
 	l := d.log.WithField("func", "Remove()")
 	l.Infof("request: '%+v'", req)
@@ -179,22 +206,11 @@ func (d *Driver) Remove(req *volume.RemoveRequest) error {
 	}
 	l.Infof("path '%s' resolved on %s NexentaStor", filesystemPath, nsProvider)
 
-	// if here, than filesystemPath exists on NS
-	err = nsProvider.DestroyFilesystemWithClones(filesystemPath, false)
-	if err != nil && !ns.IsNotExistNefError(err) {
-		return logError(l, fmt.Errorf(
-			"Cannot delete NexentaStor filesystem '%s' for volume '%s': %s",
-			filesystemPath,
-			volumeName,
-			err,
-		))
-	}
-
-	l.Infof("done: filesystem '%s' has been deleted from NexentaStor for '%s' volume", filesystemPath, volumeName)
+	l.Infof("done: return OK and keep filesystem '%s' on NexentaStor for furher usage", filesystemPath)
 	return nil
 }
 
-// List volumes managed by NS
+// List lists all shared filesystems on NS as volumes
 func (d *Driver) List() (*volume.ListResponse, error) {
 	l := d.log.WithField("func", "List()")
 	l.Infof("request")
@@ -214,15 +230,20 @@ func (d *Driver) List() (*volume.ListResponse, error) {
 
 	filesystems, err := nsProvider.GetFilesystems(datasetPath)
 	if err != nil {
-		return nil, logError(l, fmt.Errorf("FailedPrecondition: Cannot get filesystems: %s", err))
+		return nil, logError(l, fmt.Errorf("InternalError: Cannot get filesystems: %s", err))
 	}
 
-	volumes := make([]*volume.Volume, len(filesystems))
-	for i, item := range filesystems {
-		name := strings.TrimPrefix(item.Path, datasetPath+"/")
-		volumes[i] = &volume.Volume{
-			Name: name,
-			//Mountpoint: filepath.Join(config.DriverMountPointsRoot, name),
+	volumes := []*volume.Volume{}
+	for _, fs := range filesystems {
+		if fs.SharedOverNfs {
+			name := strings.TrimPrefix(fs.Path, datasetPath+"/")
+			volumes = append(volumes, &volume.Volume{
+				Name: name,
+				// as docs says (https://docs.docker.com/v17.09/engine/extend/plugins_volume/#volumedriverlist)
+				// it's OK to return w\o MountPoint, in our case driver use mount + bind-mounts for each container
+				// and there is no way to say what is "Mountpoint" for particular Docker volume
+				//Mountpoint: filepath.Join(config.DriverMountPointsRoot, name),
+			})
 		}
 	}
 
@@ -261,13 +282,25 @@ func (d *Driver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 
 	filesystem, err := nsProvider.GetFilesystem(filesystemPath)
 	if err != nil {
-		return nil, logError(l, fmt.Errorf("FailedPrecondition: Cannot get filesystem '%s': %s", filesystemPath, err))
+		return nil, logError(l, fmt.Errorf("InternalError: Cannot get filesystem '%s': %s", filesystemPath, err))
+	}
+
+	if !filesystem.SharedOverNfs {
+		l.Infof(
+			"done: filesystem '%s' found on %s NexentaStor, but return empty response because it's not shared",
+			datasetPath,
+			nsProvider,
+		)
+		return nil, nil
 	}
 
 	l.Infof("done: filesystem '%s' was found for '%v' volume", filesystem.String(), volumeName)
 	return &volume.GetResponse{
 		Volume: &volume.Volume{
 			Name: volumeName,
+			// as docs says (https://docs.docker.com/v17.09/engine/extend/plugins_volume/#volumedriverget)
+			// it's OK to return w\o MountPoint, in our case driver use mount + bind-mounts for each container
+			// and there is no way to say what is "Mountpoint" for particular Docker volume
 			//Mountpoint: filepath.Join(config.DriverMountPointsRoot, volumeName),
 		},
 	}, nil
@@ -283,10 +316,10 @@ func (d *Driver) Path(req *volume.PathRequest) (*volume.PathResponse, error) {
 		return nil, logError(l, fmt.Errorf("InvalidArgument: req.Name must be provided"))
 	}
 
-	// TODO this is volume mount point, not a container bind-mount point
-	mountPoint := filepath.Join(config.DriverMountPointsRoot, volumeName)
+	// TODO this is a volume mount point, not a container bind-mount point
+	//mountPoint := filepath.Join(config.DriverMountPointsRoot, volumeName)
 
-	l.Infof("done: return mount point '%s' for '%v' volume", mountPoint, volumeName)
+	l.Infof("done: return no mount point for '%v' volume", volumeName)
 	return &volume.PathResponse{
 		// as docs says (https://docs.docker.com/v17.09/engine/extend/plugins_volume/#volumedriverpath)
 		// it's OK to return empty response, in our case driver use mount + bind-mounts for each container
@@ -410,8 +443,8 @@ func (d *Driver) mountNFSShare(filesystem ns.Filesystem, dataIP, targetPath stri
 
 		if existingMount.Device != mountSource {
 			return fmt.Errorf(
-				"Mount point '%s' already exists and cannot be used for a new container, because mount sources are "+
-					"different. Needed: '%s', already mounted: '%s'",
+				"Mount point '%s' already exists and cannot be used for a new container, "+
+					"because mount sources are different. Needed: '%s', already mounted: '%s'",
 				targetPath,
 				mountSource,
 				existingMount.Device,
@@ -532,7 +565,7 @@ func (d *Driver) Unmount(req *volume.UnmountRequest) error {
 	if mountCount == 0 {
 		l.Infof("done: no mounts found with source '%s'", volumeMountSource)
 	} else if mountCount == 1 {
-		// this is the last filesystem share mount, therefore no container uses it, filesystem can be finally unmount
+		// this is the last filesystem share mount, therefore no container uses it, filesystem can be finally unmounted
 		l.Infof("the last filesystem mount with source '%s' was found, attempt to unmount it", volumeMountSource)
 		err := d.mounter.DoUnmount(volumeMountPoint)
 		if err != nil {
