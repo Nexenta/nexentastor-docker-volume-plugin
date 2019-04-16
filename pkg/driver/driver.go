@@ -455,7 +455,8 @@ func (d *Driver) mountNFSShare(filesystem ns.Filesystem, dataIP, targetPath stri
 		// compare mount options
 		missedOptions := []string{}
 		for _, o := range mountOptions {
-			if !arrays.ContainsString(existingMount.Opts, o) {
+			// treat vers=4 and vers=4.0 as same versions
+			if !arrays.ContainsString(existingMount.Opts, o) && !arrays.ContainsString(existingMount.Opts, o+".0") {
 				missedOptions = append(missedOptions, o)
 			}
 		}
