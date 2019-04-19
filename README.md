@@ -1,5 +1,6 @@
 # NexentaStor Volume Driver for Docker (v1.0.0)
 
+[![Build Status](https://travis-ci.org/Nexenta/nexenta-docker-driver.svg?branch=1.0.0)](https://travis-ci.org/Nexenta/nexenta-docker-driver)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Nexenta/nexenta-docker-driver)](https://goreportcard.com/report/github.com/Nexenta/nexenta-docker-driver)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
