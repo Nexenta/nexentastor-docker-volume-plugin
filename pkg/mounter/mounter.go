@@ -43,8 +43,8 @@ func (m *Mounter) FindMountByTargetPath(targetPath string) (*k8sMount.MountPoint
 	return nil, nil
 }
 
-// FindMountBySource finds mounts by mount source
-func (m *Mounter) FindMountBySource(mountSource string) ([]k8sMount.MountPoint, error) {
+// FindMountByTargetPathHasPrefix finds mounts which target path with specified prefix
+func (m *Mounter) FindMountByTargetPathHasPrefix(targetPath string) ([]k8sMount.MountPoint, error) {
 	mounts := []k8sMount.MountPoint{}
 
 	allMounts, err := m.mount.List()
@@ -53,7 +53,7 @@ func (m *Mounter) FindMountBySource(mountSource string) ([]k8sMount.MountPoint, 
 	}
 
 	for _, mount := range allMounts {
-		if mount.Device == mountSource {
+		if strings.HasPrefix(mount.Path, targetPath) {
 			mounts = append(mounts, mount)
 		}
 	}
@@ -128,8 +128,8 @@ func (m *Mounter) Mount(mountSource, targetPath, fsType string, mountOptions []s
 	return nil
 }
 
-// DoUnmount prepares end executes umount command and removes mount point
-func (m *Mounter) DoUnmount(targetPath string) error {
+// Unmount prepares end executes umount command and removes mount point
+func (m *Mounter) Unmount(targetPath string) error {
 	if err := m.mount.Unmount(targetPath); err != nil {
 		return fmt.Errorf("InternalError: Failed to unmount target path '%s': %s", targetPath, err)
 	}

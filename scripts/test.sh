@@ -49,6 +49,7 @@ rm -rf /tmp/${MOUNT_TARGET}
 MD5_3=$(docker run -v ${VOLUME_NAME}:/data2 -it --rm ubuntu /bin/bash -c "md5sum /data2/${TEST_FILE_NAME}")
 docker volume remove ${VOLUME_NAME}
 docker volume list
+tail -1000 /var/lib/docker/plugins/*/rootfs/var/log/nvd.log
 
 set +x
 echo ""

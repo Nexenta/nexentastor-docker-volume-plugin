@@ -208,7 +208,7 @@ func (d *Driver) Remove(req *volume.RemoveRequest) error {
 	}
 	l.Infof("path '%s' resolved on %s NexentaStor", filesystemPath, nsProvider)
 
-	l.Infof("done: return OK and keep filesystem '%s' on NexentaStor for furher usage", filesystemPath)
+	l.Infof("done: return OK and keep filesystem '%s' on NexentaStor for further usage", filesystemPath)
 	return nil
 }
 
@@ -529,59 +529,41 @@ func (d *Driver) Unmount(req *volume.UnmountRequest) error {
 		return logError(l, fmt.Errorf("FailedPrecondition: Cannot use config file: %s", err))
 	}
 
-	dataIP := d.config.DefaultDataIP
-	datasetPath := d.config.DefaultDataset
-	filesystemPath := filepath.Join(datasetPath, volumeName)
 	containerBindMountPoint := getContainerBindMountPath(volumeName, containerID)
 
 	// unmount volume to container bind-mount
-	err := d.mounter.DoUnmount(containerBindMountPoint)
+	err := d.mounter.Unmount(containerBindMountPoint)
 	if err != nil {
 		return logError(l, err)
 	}
 	l.Infof("container bind-mount '%s' has been unmounted", containerBindMountPoint)
 
-	// NFS style mount source
-	volumeMountSource := getNFSMountSource(dataIP, filesystemPath)
+	// check if any other containers use this volume mount point
+	volumeMountPoint := getVolumeMountPoint(volumeName) // path inside driver's container to mount NS filesystem
 
-	nsProvider, err := d.resolveNS(filesystemPath)
-	if err == nil {
-		// get NexentaStor filesystem information
-		filesystem, err := nsProvider.GetFilesystem(filesystemPath)
-		if err == nil {
-			// if filesystem found on NS, then update volume mount source
-			// by actual share path from NS filesystem properties
-			volumeMountSource = getNFSMountSource(dataIP, filesystem.MountPoint)
-		}
-	}
-	l.Infof("volume mount point source to look for: %v", volumeMountSource)
-
-	// check if volume mount is mounted including bind mount to containers
-	volumeMounts, err := d.mounter.FindMountBySource(volumeMountSource)
+	// check if volume bind mount(s) still exists, that means other container(s) use them
+	volumeBindMounts, err := d.mounter.FindMountByTargetPathHasPrefix(getContainerBindMountPath(volumeName, ""))
 	if err != nil {
 		return logError(l, err)
 	}
-	l.Infof("found %d mount(s) that has '%s' source", len(volumeMounts), volumeMountSource)
 
-	volumeMountPoint := getVolumeMountPoint(volumeName) // path inside driver's container to mount NS filesystem
+	bindVolumeMountCount := len(volumeBindMounts)
+	l.Infof("found %d bind mount(s) that mounted to '%s' source", bindVolumeMountCount, volumeMountPoint)
 
-	mountCount := len(volumeMounts)
-	if mountCount == 0 {
-		l.Infof("done: no mounts found with source '%s'", volumeMountSource)
-	} else if mountCount == 1 {
-		// this is the last filesystem share mount, therefore no container uses it, filesystem can be finally unmounted
-		l.Infof("the last filesystem mount with source '%s' was found, attempt to unmount it", volumeMountSource)
-		err := d.mounter.DoUnmount(volumeMountPoint)
+	if bindVolumeMountCount == 0 {
+		// this is the last mount of this filesystem share, therefore no container uses it,
+		// filesystem can be finally unmounted
+		l.Infof("no containers use '%s' mount point, attempt to unmount it", volumeMountPoint)
+		err := d.mounter.Unmount(volumeMountPoint)
 		if err != nil {
 			return logError(l, err)
 		}
 		l.Infof("done: volume '%s' has been unmounted", volumeMountPoint)
 	} else {
 		l.Infof(
-			"done: keep filesystem mount '%s -> %s' because it is used by %d other container(s)",
-			volumeMountSource,
+			"done: keep '%s' volume mount point, because it is used by %d other container(s)",
 			volumeMountPoint,
-			mountCount-1,
+			bindVolumeMountCount,
 		)
 	}
 
