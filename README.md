@@ -8,6 +8,8 @@ This branch is currently under **development**, consider to wait for stable vers
 
 NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nexenta.com/products/nexentastor).
 
+DockerHub driver page: [https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin).
+
 ## Supported versions
 
 |                | NexentaStor 5.1                                                      | NexentaStor 5.2                                                      |
