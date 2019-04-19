@@ -149,17 +149,25 @@ make push-production
 
 All development happens in `master` branch,
 when it's time to publish a new version,
-new branch should be created.
+new git tag should be created.
 
+1. Build and test the new version using local registry:
+   ```bash
+   # build development version:
+   make build-development
+   # publish to local registry
+   make push-development
+   # for now, manually test plugin using local registry
+   ```
+
+2. Release a new version. This script does following:
+   - generates new `CHANGELOG.md`
+   - builds plugin version 'nexenta/nexentastor-nfs-plugin:X.X.X'
+   - logs in to hub.docker.com
+   - publishes plugin version 'nexenta/nexentastor-nfs-plugin:X.X.X' to hub.docker.com
+   - creates git tag 'X.X.X' and pushes it to the repository
 ```bash
-export NEXT_TAG=X.X.X
-make pre-release-container
-git diff
-git add .
-git commit -m "release ${NEXT_TAG}"
-git push
-git tag "${NEXT_TAG}"
-git push --tags
+VERSION=X.X.X make release
 ```
 
 ## Troubleshooting

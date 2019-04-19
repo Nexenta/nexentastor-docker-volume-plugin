@@ -12,10 +12,10 @@ RUN go get github.com/git-chglog/git-chglog/cmd/git-chglog
 COPY . ./
 
 # next release tag
-ARG NEXT_TAG
-ENV NEXT_TAG=$NEXT_TAG
+ARG VERSION
+ENV VERSION=$VERSION
 
 # generate changelkog
-RUN /go/bin/git-chglog --next-tag ${NEXT_TAG} -o CHANGELOG.md
+RUN echo "Use version: $VERSION" && /go/bin/git-chglog --next-tag ${VERSION} -o CHANGELOG.md
 
 ENTRYPOINT ["/bin/bash"]

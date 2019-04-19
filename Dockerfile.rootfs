@@ -8,6 +8,8 @@ COPY cmd ./cmd
 COPY pkg ./pkg
 COPY vendor ./vendor
 COPY Makefile ./Makefile
+ARG VERSION
+ENV VERSION=$VERSION
 RUN make build-go
 
 # driver rootfs container
