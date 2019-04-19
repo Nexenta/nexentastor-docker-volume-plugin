@@ -1,0 +1,21 @@
+# pre-release container generates:
+# - CNAHGELOG.md
+
+FROM golang:1.11
+
+WORKDIR /go/src/github.com/Nexenta/nexenta-docker-driver/
+
+# deps
+RUN go get github.com/git-chglog/git-chglog/cmd/git-chglog
+
+# source code
+COPY . ./
+
+# next release tag
+ARG NEXT_TAG
+ENV NEXT_TAG=$NEXT_TAG
+
+# generate changelkog
+RUN /go/bin/git-chglog --next-tag ${NEXT_TAG} -o CHANGELOG.md
+
+ENTRYPOINT ["/bin/bash"]

@@ -6,6 +6,10 @@ IMAGE_NAME ?= ${DRIVER_NAME}
 # must be the same as in `config.Name`
 DRIVER_EXECUTABLE_NAME = nvd
 
+DOCKER_FILE_PRE_RELEASE = Dockerfile.pre-release
+DOCKER_IMAGE_PRE_RELEASE = nexenta-docker-driver-pre-release
+DOCKER_CONTAINER_PRE_RELEASE = ${DOCKER_IMAGE_PRE_RELEASE}-container
+
 REGISTRY_PRODUCTION ?= nexenta
 REGISTRY_DEVELOPMENT ?= 10.3.199.92:5000
 
@@ -69,6 +73,23 @@ uninstall-development:
 uninstall-production:
 	docker plugin disable -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION} || true
 	docker plugin remove -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION} || true
+
+.PHONY: pre-release-container
+pre-release-container: check-env-NEXT_TAG
+	@echo "Next release tag: ${NEXT_TAG}\n"
+	docker build -f ${DOCKER_FILE_PRE_RELEASE} -t ${DOCKER_IMAGE_PRE_RELEASE} --build-arg NEXT_TAG=${NEXT_TAG} .
+	-docker rm -f ${DOCKER_CONTAINER_PRE_RELEASE}
+	docker create --name ${DOCKER_CONTAINER_PRE_RELEASE} ${DOCKER_IMAGE_PRE_RELEASE}
+	docker cp \
+		${DOCKER_CONTAINER_PRE_RELEASE}:/go/src/github.com/Nexenta/nexenta-docker-driver/CHANGELOG.md \
+		./CHANGELOG.md
+	docker rm ${DOCKER_CONTAINER_PRE_RELEASE}
+
+.PHONY: check-env-NEXT_TAG
+check-env-NEXT_TAG:
+ifeq ($(strip ${NEXT_TAG}),)
+	$(error "Error: environment variable NEXT_TAG is not set (e.i. '1.2.3')")
+endif
 
 .PHONY: clean
 clean:

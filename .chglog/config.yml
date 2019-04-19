@@ -1,0 +1,23 @@
+style: github
+template: CHANGELOG.tpl.md
+info:
+  title: CHANGELOG
+  repository_url: https://github.com/Nexenta/go-nexentastor
+options:
+  commits:
+    filters:
+      Type:
+        - feat
+        - fix
+  commit_groups:
+    title_maps:
+      feat: Features
+      fix: Bug Fixes
+  header:
+    pattern: "^(\\w*)\\:\\s(.*)$"
+    pattern_maps:
+      - Type
+      - Subject
+  notes:
+    keywords:
+      - BREAKING CHANGE

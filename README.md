@@ -149,18 +149,13 @@ when it's time to publish a new version,
 new branch should be created.
 
 ```bash
-# go get -u github.com/git-chglog/git-chglog/cmd/git-chglog
-git-chglog --next-tag X.X.X -o CHANGELOG.md
-git add CHANGELOG.md # edit it before commit
-git commit -m "release X.X.X"
+export NEXT_TAG=X.X.X
+make pre-release-container
+git diff
+git add .
+git commit -m "release ${NEXT_TAG}"
 git push
-git co -b X.X.X
-make build-production && make push-production
-vim README.md # edit versions
-git add README.md
-git ci -m "release X.X.X"
-git push
-git tag vX.X.X
+git tag "${NEXT_TAG}"
 git push --tags
 ```
 
