@@ -2,6 +2,7 @@ package ns
 
 import (
 	"strings"
+	"time"
 )
 
 // ACLRuleSet - filesystem ACL rule set
@@ -46,6 +47,20 @@ func (fs *Filesystem) GetReferencedQuotaSize() int64 {
 	return fs.BytesAvailable + fs.BytesUsed
 }
 
+// Snapshot - NexentaStor snapshot
+type Snapshot struct {
+	Path         string    `json:"path"`
+	Name         string    `json:"name"`
+	Parent       string    `json:"parent"`
+	Clones       []string  `json:"clones"`
+	CreationTxg  string    `json:"creationTxg"`
+	CreationTime time.Time `json:"creationTime"`
+}
+
+func (snapshot *Snapshot) String() string {
+	return snapshot.Path
+}
+
 // RSFCluster - RSF cluster with a name
 type RSFCluster struct {
 	Name string `json:"clusterName"`
@@ -73,6 +88,10 @@ type nefStoragePoolsResponse struct {
 
 type nefStorageFilesystemsResponse struct {
 	Data []Filesystem `json:"data"`
+}
+
+type nefStorageSnapshotsResponse struct {
+	Data []Snapshot `json:"data"`
 }
 
 type nefNasNfsRequest struct {

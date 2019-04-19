@@ -9,10 +9,10 @@ import (
 	"github.com/docker/go-plugins-helpers/volume"
 	"github.com/sirupsen/logrus"
 
+	"github.com/Nexenta/go-nexentastor/pkg/ns"
 	"github.com/Nexenta/nexenta-docker-driver/pkg/arrays"
 	"github.com/Nexenta/nexenta-docker-driver/pkg/config"
 	"github.com/Nexenta/nexenta-docker-driver/pkg/mounter"
-	"github.com/Nexenta/nexentastor-csi-driver/pkg/ns" //TODO move to a dedicated library
 )
 
 // Driver - Docker Volume Driver for NS, it implements methods /VolumeDriver.*:
@@ -36,10 +36,11 @@ func New(args Args) (*Driver, error) {
 	l.Debug("created...")
 
 	nsResolver, err := ns.NewResolver(ns.ResolverArgs{
-		Address:  args.Config.Address,
-		Username: args.Config.Username,
-		Password: args.Config.Password,
-		Log:      l,
+		Address:            args.Config.Address,
+		Username:           args.Config.Username,
+		Password:           args.Config.Password,
+		Log:                l,
+		InsecureSkipVerify: true, //TODO move to config
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create NexentaStor resolver: %s", err)
@@ -62,10 +63,11 @@ func (d *Driver) refreshConfig() error {
 
 	if changed {
 		d.nsResolver, err = ns.NewResolver(ns.ResolverArgs{
-			Address:  d.config.Address,
-			Username: d.config.Username,
-			Password: d.config.Password,
-			Log:      d.log,
+			Address:            d.config.Address,
+			Username:           d.config.Username,
+			Password:           d.config.Password,
+			Log:                d.log,
+			InsecureSkipVerify: true, //TODO move to config
 		})
 		if err != nil {
 			return fmt.Errorf("Cannot create NexentaStor resolver: %s", err)

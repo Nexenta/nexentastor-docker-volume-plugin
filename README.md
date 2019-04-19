@@ -70,7 +70,12 @@ b227326b403d   nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver 
 
 ## Usage
 
-- Create Docker volume `testvolume`:
+- List all existing volumes.
+   All NexentaStor filesystems under configured `defaultDataset` path will be already listed there as Docker volumes.
+   ```bash
+   docker volume list
+   ```
+- Create Docker volume `testvolume` if NexentaStor filesystem doesn't exist:
    ```bash
    docker volume create -d nexenta/nexentastor-nfs-plugin:1.0.0 --name=testvolume
    ```
@@ -79,11 +84,8 @@ b227326b403d   nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver 
    ```bash
    docker run -v testvolume:/data -it --rm ubuntu /bin/bash
    ```
-- Remove Docker volume `testvolume`:
-   ```bash
-   docker volume remove testvolume
-   ```
-   **Note**: This operation will remove filesystem from NexentaStore.
+   **Note**: This operation will share filesystem and mount it.
+- Remove Docker volume command doesn't remove any filesystem from NexentaStore and doesn't affect Docker volumes list.
 
 ## Uninstall
 

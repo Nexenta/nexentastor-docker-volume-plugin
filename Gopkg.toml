@@ -26,16 +26,16 @@
 
 
 [[constraint]]
-  name = "github.com/Nexenta/nexentastor-csi-driver" # for NS API, todo: move to a separate repository
-  revision = "1.0.1"
-
-[[constraint]]
-  name = "github.com/sirupsen/logrus"
-  version = "1.4.1"
+  name = "github.com/Nexenta/go-nexentastor"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/docker/go-plugins-helpers"
   revision = "1e6269c305b8c75cfda1c8aa91349c38d7335814" # ver. 2018-10-25 (master)
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "^1.0.0"
 
 [prune]
   go-tests = true

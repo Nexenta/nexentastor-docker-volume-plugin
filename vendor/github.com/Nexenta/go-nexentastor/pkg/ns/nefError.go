@@ -22,17 +22,23 @@ func GetNefErrorCode(err error) string {
 	return ""
 }
 
-// IsAlreadyExistNefError - treats an error as NefError and returns true if its code is "EEXIST"
+// IsAlreadyExistNefError treats an error as NefError and returns true if its code is "EEXIST"
 func IsAlreadyExistNefError(err error) bool {
 	return GetNefErrorCode(err) == "EEXIST"
 }
 
-// IsNotExistNefError - treats an error as NefError and returns true if its code is "ENOENT"
+// IsNotExistNefError treats an error as NefError and returns true if its code is "ENOENT"
 func IsNotExistNefError(err error) bool {
 	return GetNefErrorCode(err) == "ENOENT"
 }
 
-// IsAuthNefError - treats an error as NefError and returns true if its code is "EAUTH"
+// IsBusyNefError treats an error as NefError and returns true if its code is "EBUSY"
+// Example: filesystem cannot be deleted because it has snapshots
+func IsBusyNefError(err error) bool {
+	return GetNefErrorCode(err) == "EBUSY"
+}
+
+// IsAuthNefError treats an error as NefError and returns true if its code is "EAUTH"
 func IsAuthNefError(err error) bool {
 	return GetNefErrorCode(err) == "EAUTH" //TODO use constants
 }

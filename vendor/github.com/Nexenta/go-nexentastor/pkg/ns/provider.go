@@ -9,7 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/Nexenta/nexentastor-csi-driver/pkg/rest"
+	"github.com/Nexenta/go-nexentastor/pkg/rest"
 )
 
 const (
@@ -19,22 +19,40 @@ const (
 
 // ProviderInterface - NexentaStor provider interface
 type ProviderInterface interface {
-	CreateFilesystem(params CreateFilesystemParams) error
-	CreateNfsShare(params CreateNfsShareParams) error
-	CreateSmbShare(params CreateSmbShareParams) error
-	DeleteNfsShare(path string) error
-	DeleteSmbShare(path string) error
-	DestroyFilesystem(path string) error
-	GetFilesystem(path string) (Filesystem, error)
-	GetFilesystemAvailableCapacity(path string) (int64, error)
-	GetFilesystems(parent string) ([]Filesystem, error)
-	GetLicense() (License, error)
-	GetPools() ([]Pool, error)
-	GetRSFClusters() ([]RSFCluster, error)
-	GetSmbShareName(path string) (string, error)
-	IsJobDone(jobID string) (bool, error)
+	// system
 	LogIn() error
+	IsJobDone(jobID string) (bool, error)
+	GetLicense() (License, error)
+	GetRSFClusters() ([]RSFCluster, error)
+
+	// pools
+	GetPools() ([]Pool, error)
+
+	// filesystems
+	CreateFilesystem(params CreateFilesystemParams) error
+	DestroyFilesystem(path string, destroySnapshots bool) error
+	DestroyFilesystemWithClones(path string, destroySnapshots bool) error
 	SetFilesystemACL(path string, aclRuleSet ACLRuleSet) error
+	GetFilesystem(path string) (Filesystem, error)
+	GetFilesystems(parent string) ([]Filesystem, error)
+	GetFilesystemAvailableCapacity(path string) (int64, error)
+
+	// filesystems - nfs share
+	CreateNfsShare(params CreateNfsShareParams) error
+	DeleteNfsShare(path string) error
+
+	// filesystems - smb share
+	CreateSmbShare(params CreateSmbShareParams) error
+	DeleteSmbShare(path string) error
+	GetSmbShareName(path string) (string, error)
+
+	// snapshots
+	CreateSnapshot(params CreateSnapshotParams) error
+	DestroySnapshot(path string) error
+	GetSnapshot(path string) (Snapshot, error)
+	GetSnapshots(volumePath string, recursive bool) ([]Snapshot, error)
+	CloneSnapshot(path string, params CloneSnapshotParams) error
+	PromoteFilesystem(path string) error
 }
 
 // Provider - NexentaStor API provider
@@ -46,11 +64,11 @@ type Provider struct {
 	Log        *logrus.Entry
 }
 
-func (nsp *Provider) String() string {
-	return nsp.Address
+func (p *Provider) String() string {
+	return p.Address
 }
 
-func (nsp *Provider) parseNefError(bodyBytes []byte, prefix string) error {
+func (p *Provider) parseNefError(bodyBytes []byte, prefix string) error {
 	var restErrorMessage string
 	var restErrorCode string
 
@@ -78,7 +96,7 @@ func (nsp *Provider) parseNefError(bodyBytes []byte, prefix string) error {
 		restErrorCode = response.Code
 	}
 
-	if len(restErrorMessage) > 0 {
+	if restErrorMessage != "" {
 		return &NefError{
 			Err:  fmt.Errorf("%s: %s", prefix, restErrorMessage),
 			Code: restErrorCode,
@@ -88,8 +106,8 @@ func (nsp *Provider) parseNefError(bodyBytes []byte, prefix string) error {
 	return nil
 }
 
-func (nsp *Provider) sendRequestWithStruct(method, path string, data, response interface{}) error {
-	bodyBytes, err := nsp.doAuthRequest(method, path, data)
+func (p *Provider) sendRequestWithStruct(method, path string, data, response interface{}) error {
+	bodyBytes, err := p.doAuthRequest(method, path, data)
 	if err != nil {
 		return err
 	}
@@ -117,33 +135,33 @@ func (nsp *Provider) sendRequestWithStruct(method, path string, data, response i
 	return nil
 }
 
-func (nsp *Provider) sendRequest(method, path string, data interface{}) error {
-	_, err := nsp.doAuthRequest(method, path, data)
+func (p *Provider) sendRequest(method, path string, data interface{}) error {
+	_, err := p.doAuthRequest(method, path, data)
 	return err
 }
 
-func (nsp *Provider) doAuthRequest(method, path string, data interface{}) ([]byte, error) {
-	l := nsp.Log.WithField("func", "doAuthRequest()")
+func (p *Provider) doAuthRequest(method, path string, data interface{}) ([]byte, error) {
+	l := p.Log.WithField("func", "doAuthRequest()")
 
-	statusCode, bodyBytes, err := nsp.RestClient.Send(method, path, data)
+	statusCode, bodyBytes, err := p.RestClient.Send(method, path, data)
 	if err != nil {
 		return bodyBytes, err
 	}
 
-	nefError := nsp.parseNefError(bodyBytes, "checking login status")
+	nefError := p.parseNefError(bodyBytes, "checking login status")
 
 	// log in again if user is not logged in
-	if statusCode == 401 && IsAuthNefError(nefError) {
+	if statusCode == http.StatusUnauthorized && IsAuthNefError(nefError) {
 		// do login call if used is not authorized in api
-		l.Debugf("log in as '%s'...", nsp.Username)
+		l.Debugf("log in as '%s'...", p.Username)
 
-		err = nsp.LogIn()
+		err = p.LogIn()
 		if err != nil {
 			return nil, err
 		}
 
 		// send original request again
-		statusCode, bodyBytes, err = nsp.RestClient.Send(method, path, data)
+		statusCode, bodyBytes, err = p.RestClient.Send(method, path, data)
 		if err != nil {
 			return bodyBytes, err
 		}
@@ -152,17 +170,17 @@ func (nsp *Provider) doAuthRequest(method, path string, data interface{}) ([]byt
 	if statusCode == http.StatusAccepted {
 		// this is an async job
 		var href string
-		href, err = nsp.parseAsyncJobHref(bodyBytes)
+		href, err = p.parseAsyncJobHref(bodyBytes)
 		if err != nil {
 			return bodyBytes, err
 		}
 
-		err = nsp.waitForAsyncJob(strings.TrimPrefix(href, "/jobStatus/"))
+		err = p.waitForAsyncJob(strings.TrimPrefix(href, "/jobStatus/"))
 		if err != nil {
 			l.Debugf("waitForAsyncJob() error: %s", err)
 		}
 	} else if statusCode >= 300 {
-		nefError := nsp.parseNefError(bodyBytes, "request error")
+		nefError := p.parseNefError(bodyBytes, "request error")
 		if nefError != nil {
 			err = nefError
 		} else {
@@ -177,7 +195,7 @@ func (nsp *Provider) doAuthRequest(method, path string, data interface{}) ([]byt
 	return bodyBytes, err
 }
 
-func (nsp *Provider) parseAsyncJobHref(bodyBytes []byte) (string, error) {
+func (p *Provider) parseAsyncJobHref(bodyBytes []byte) (string, error) {
 	response := nefJobStatusResponse{}
 	if err := json.Unmarshal(bodyBytes, &response); err != nil {
 		return "", fmt.Errorf("Cannot parse NS response '%s' to '%+v'", bodyBytes, response)
@@ -189,13 +207,12 @@ func (nsp *Provider) parseAsyncJobHref(bodyBytes []byte) (string, error) {
 		}
 	}
 
-	err := fmt.Errorf("Request return an async job, but response doesn't contain any links: %v", bodyBytes)
-	return "", err
+	return "", fmt.Errorf("Request return an async job, but response doesn't contain any links: %v", bodyBytes)
 }
 
 // waitForAsyncJob - keep asking for job status while it's not completed, return an error if timeout exceeded
-func (nsp *Provider) waitForAsyncJob(jobID string) (err error) {
-	l := nsp.Log.WithField("job", jobID)
+func (p *Provider) waitForAsyncJob(jobID string) (err error) {
+	l := p.Log.WithField("job", jobID)
 
 	timer := time.NewTimer(0)
 	timeout := time.After(checkJobStatusTimeout)
@@ -204,7 +221,7 @@ func (nsp *Provider) waitForAsyncJob(jobID string) (err error) {
 	for {
 		select {
 		case <-timer.C:
-			jobDone, err := nsp.IsJobDone(jobID)
+			jobDone, err := p.IsJobDone(jobID)
 			if err != nil { // request failed
 				return err
 			} else if jobDone { // job is completed
@@ -229,32 +246,34 @@ type ProviderArgs struct {
 	Username string
 	Password string
 	Log      *logrus.Entry
+
+	// InsecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
+	InsecureSkipVerify bool
 }
 
-// NewProvider - create NexentaStor provider instance
-func NewProvider(args ProviderArgs) (nsp ProviderInterface, err error) {
+// NewProvider creates NexentaStor provider instance
+func NewProvider(args ProviderArgs) (ProviderInterface, error) {
 	l := args.Log.WithFields(logrus.Fields{
 		"cmp": "NSProvider",
 		"ns":  fmt.Sprint(args.Address),
 	})
 
-	l.Debugf("created for %s", args.Address)
-
-	restClient, err := rest.NewClient(rest.ClientArgs{
-		Address: args.Address,
-		Log:     l,
-	})
-	if err != nil {
-		l.Errorf("cannot create REST client for: %s", args.Address)
+	if args.Address == "" {
+		return nil, fmt.Errorf("NexentaStor address not specified: %s", args.Address)
 	}
 
-	nsp = &Provider{
+	restClient := rest.NewClient(rest.ClientArgs{
+		Address:            args.Address,
+		Log:                l,
+		InsecureSkipVerify: args.InsecureSkipVerify,
+	})
+
+	l.Debugf("created for '%s'", args.Address)
+	return &Provider{
 		Address:    args.Address,
 		Username:   args.Username,
 		Password:   args.Password,
 		RestClient: restClient,
 		Log:        l,
-	}
-
-	return nsp, nil
+	}, nil
 }

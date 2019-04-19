@@ -24,7 +24,7 @@ type Client struct {
 	httpClient *http.Client
 	log        *logrus.Entry
 
-	mu        sync.Mutex
+	mux       sync.Mutex
 	requestID int64
 }
 
@@ -35,8 +35,8 @@ type ClientInterface interface {
 	SetAuthToken(token string)
 }
 
-// BuildURI - build request URI using [path?params...] format
-func (client *Client) BuildURI(uri string, params map[string]string) string {
+// BuildURI builds request URI using [path?params...] format
+func (c *Client) BuildURI(uri string, params map[string]string) string {
 	paramsStr := ""
 	paramValues := url.Values{}
 
@@ -54,19 +54,19 @@ func (client *Client) BuildURI(uri string, params map[string]string) string {
 	return uri
 }
 
-// Send - send request to REST server
-// data     interface{} - request payload, any interface for json.Marshal()
-func (client *Client) Send(method, path string, data interface{}) (int, []byte, error) {
-	client.mu.Lock()
-	client.requestID++
-	l := client.log.WithFields(logrus.Fields{
+// Send sends request to REST server
+// data interface{} - request payload, any interface for json.Marshal()
+func (c *Client) Send(method, path string, data interface{}) (int, []byte, error) {
+	c.mux.Lock()
+	c.requestID++
+	l := c.log.WithFields(logrus.Fields{
 		"func":  "Send()",
 		"req":   fmt.Sprintf("%s %s", method, path),
-		"reqID": client.requestID,
+		"reqID": c.requestID,
 	})
-	client.mu.Unlock()
+	c.mux.Unlock()
 
-	uri := fmt.Sprintf("%s/%s", client.address, path)
+	uri := fmt.Sprintf("%s/%s", c.address, path)
 
 	l.Debug("send request")
 
@@ -90,13 +90,13 @@ func (client *Client) Send(method, path string, data interface{}) (int, []byte, 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	if len(client.authToken) != 0 {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", client.authToken))
+	if len(c.authToken) != 0 {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.authToken))
 	}
 
-	res, err := client.httpClient.Do(req)
+	res, err := c.httpClient.Do(req)
 	if err != nil {
-		l.Errorf("request error: %s", err)
+		l.Debugf("request error: %s", err)
 		return 0, nil, err
 	}
 
@@ -114,27 +114,28 @@ func (client *Client) Send(method, path string, data interface{}) (int, []byte, 
 	return res.StatusCode, bodyBytes, err
 }
 
-// SetAuthToken - set Bearer auth token for all requests
-func (client *Client) SetAuthToken(token string) {
-	client.authToken = token
+// SetAuthToken sets Bearer auth token for all requests
+func (c *Client) SetAuthToken(token string) {
+	c.authToken = token
 }
 
 // ClientArgs - params to create Client instance
 type ClientArgs struct {
 	Address string
 	Log     *logrus.Entry
+
+	// InsecureSkipVerify controls whether a client verifies the server's certificate chain and host name.
+	InsecureSkipVerify bool
 }
 
-// NewClient - create new REST client
-func NewClient(args ClientArgs) (client ClientInterface, err error) {
+// NewClient creates new REST client
+func NewClient(args ClientArgs) ClientInterface {
 	l := args.Log.WithField("cmp", "RestClient")
-
-	l.Debugf("created for %s", args.Address)
 
 	tr := &http.Transport{
 		IdleConnTimeout: 60 * time.Second,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true, // don't check certificate, fix this!
+			InsecureSkipVerify: args.InsecureSkipVerify,
 		},
 	}
 
@@ -143,12 +144,11 @@ func NewClient(args ClientArgs) (client ClientInterface, err error) {
 		Timeout:   requestTimeout,
 	}
 
-	client = &Client{
+	l.Debugf("created for '%s'", args.Address)
+	return &Client{
 		address:    args.Address,
 		httpClient: httpClient,
 		log:        l,
 		requestID:  0,
 	}
-
-	return client, nil
 }

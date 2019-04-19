@@ -10,14 +10,15 @@
   version = "v0.4.12"
 
 [[projects]]
-  digest = "1:c120fd7628cba3028e5c73701934dc16c205e403696b1a33661b4cb574dcce87"
-  name = "github.com/Nexenta/nexentastor-csi-driver"
+  digest = "1:3aa8014e11b7f35b4b23cedfd7ed70d25099aed34e58bbdadc21ab9d3466b628"
+  name = "github.com/Nexenta/go-nexentastor"
   packages = [
     "pkg/ns",
     "pkg/rest",
   ]
   pruneopts = "UT"
-  revision = "1.0.1"
+  revision = "087b560efc84e9f30df1942a3d1bca6dd41ee11f"
+  version = "1.0.0"
 
 [[projects]]
   digest = "1:1c934733c39b35a449ab93f7e49260730e6289f9a667ec7b7f519fe42b82b5a1"
@@ -141,7 +142,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/Nexenta/nexentastor-csi-driver/pkg/ns",
+    "github.com/Nexenta/go-nexentastor/pkg/ns",
     "github.com/antonfisher/nested-logrus-formatter",
     "github.com/docker/go-plugins-helpers/volume",
     "github.com/sirupsen/logrus",
