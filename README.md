@@ -170,6 +170,8 @@ new git tag should be created.
 VERSION=X.X.X make release
 ```
 
+3. Update Github [releases](https://github.com/Nexenta/nexenta-docker-driver/releases).
+
 ## Troubleshooting
 
 - Show installed drivers:

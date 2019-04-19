@@ -87,11 +87,11 @@ release:
 	@echo "New tag: '${VERSION}'\n\n \
 		To change version set enviroment variable 'VERSION=X.X.X make release'.\n\n \
 		Confirm that:\n \
-		1. Build will be based on ${GIT_BRANCH} git branch\n \
+		1. New version will be based on current '${GIT_BRANCH}' git branch\n \
 		2. Plugin version '${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}' will be built\n \
 		3. Login to hub.docker.com will be requested\n \
 		4. Plugin version '${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}' will be pushed to hub.docker.com\n \
-		5. Git tag '${VERSION}' will be created.\n\n \
+		5. Git tag '${VERSION}' will be created and pushed to the repository.\n\n \
 		Are you sure? [y/N]: "
 	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
 	make generate-changelog
