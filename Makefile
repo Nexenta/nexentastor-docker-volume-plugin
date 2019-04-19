@@ -91,7 +91,8 @@ release:
 		2. Plugin version '${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}' will be built\n \
 		3. Login to hub.docker.com will be requested\n \
 		4. Plugin version '${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}' will be pushed to hub.docker.com\n \
-		5. Git tag '${VERSION}' will be created and pushed to the repository.\n\n \
+		5. CHANGELOG.md file will be updated\n \
+		6. Git tag '${VERSION}' will be created and pushed to the repository.\n\n \
 		Are you sure? [y/N]: "
 	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
 	make generate-changelog
@@ -106,6 +107,7 @@ release:
 
 .PHONY: generate-changelog
 generate-changelog:
+	@echo "Release tag: ${VERSION}\n"
 	docker build -f ${DOCKER_FILE_PRE_RELEASE} -t ${DOCKER_IMAGE_PRE_RELEASE} --build-arg VERSION=${VERSION} .
 	-docker rm -f ${DOCKER_CONTAINER_PRE_RELEASE}
 	docker create --name ${DOCKER_CONTAINER_PRE_RELEASE} ${DOCKER_IMAGE_PRE_RELEASE}
