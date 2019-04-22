@@ -92,7 +92,8 @@ release:
 		3. Login to hub.docker.com will be requested\n \
 		4. Plugin version '${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}' will be pushed to hub.docker.com\n \
 		5. CHANGELOG.md file will be updated\n \
-		6. Git tag '${VERSION}' will be created and pushed to the repository.\n\n \
+		6. Git tag '${VERSION}' will be created and pushed to the repository.\n \
+		7. Ask to update 'latest' tag on hub.docker.com, update it if needed.\n\n \
 		Are you sure? [y/N]: "
 	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
 	make generate-changelog
@@ -104,6 +105,7 @@ release:
 	git push
 	git tag ${VERSION}
 	git push --tags
+	make update-latest
 
 .PHONY: generate-changelog
 generate-changelog:
@@ -115,6 +117,17 @@ generate-changelog:
 		${DOCKER_CONTAINER_PRE_RELEASE}:/go/src/github.com/Nexenta/nexenta-docker-driver/CHANGELOG.md \
 		./CHANGELOG.md
 	docker rm ${DOCKER_CONTAINER_PRE_RELEASE}
+
+.PHONY: update-latest
+update-latest:
+	@echo "Is this the latest version of the plugin?\n"
+	@echo "If yes, this version will be pushed as 'latest' to hub.docker.com:"
+	@./plugin/rootfs/bin/nvd --version
+	@echo "\nPublish 'latest' version? [y/N]: "
+	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
+	cp config.json ./plugin/
+	docker plugin create ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:latest ./plugin
+	docker plugin push ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:latest
 
 .PHONY: clean
 clean:

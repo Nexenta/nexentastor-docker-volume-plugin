@@ -108,18 +108,27 @@ Commits should follow [Conventional Commits Spec](https://conventionalcommits.or
 Build and push commands take Git branch as a plugin version to build.
 
 ```bash
+# Set environment variable for any of these commands to over the version
+# The default version for make commands is the current Git branch.
+# VERSION=1.0.0 make ...
+
+# Note: same operations work with "*-production" postfix.
+
 # build with development tag (default for `make` w/o params)
 make build-development
 
-# build with production tag
-make build-production
+# enable development version of plugin on local Docker setup
+make enable-development
+
+# disable and delete development version of plugin
+make uninstall-development
+
+# publish the latest built container to the local registry (see `Makefile`)
+make push-development
 
 # update deps
 # go get -u github.com/golang/dep/cmd/dep
 ~/go/bin/dep ensure
-
-# check built version
-./plugin/rootfs/bin/nvd --version
 ```
 
 ### Debug
@@ -132,16 +141,9 @@ curl -X POST \
     -H "Content-Type: application/json" \
     --unix-socket /run/docker/plugins/%ID%/nvd.sock \
     http://localhost/VolumeDriver.List
-```
 
-### Publish
-
-```bash
-# push the latest built container to the local registry (see `Makefile`)
-make push-development
-
-# push the latest built container to hub.docker.com
-make push-production
+# check built version
+./plugin/rootfs/bin/nvd --version
 ```
 
 ### Release
@@ -165,6 +167,7 @@ new git tag should be created.
    - logs in to hub.docker.com
    - publishes plugin version 'nexenta/nexentastor-nfs-plugin:X.X.X' to hub.docker.com
    - creates git tag 'X.X.X' and pushes it to the repository
+   - asks to update 'latest' tag on hub.docker.com, updates it if needed.
 ```bash
 VERSION=X.X.X make release
 ```
