@@ -17,11 +17,11 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
 
 ## Requirements
 
-- Following utilities must be installed on Docker setup:
-  ```bash
-  # for NFS mounts
-  apt install -y nfs-common
-  ```
+Following utilities must be installed on Docker setup:
+```bash
+# for NFS mounts
+apt install -y nfs-common
+```
 
 ## Installation
 
@@ -81,7 +81,7 @@ b227326b403d   nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver 
    ```bash
    docker volume create -d nexenta/nexentastor-nfs-plugin:1.0.0 --name=testvolume
    ```
-   **Note**: This operation will create filesystem on NexentaStore.
+   **Note**: This operation will create a filesystem on NexentaStore in case it doesn't exist.
 - Run container which uses created volume `testvolume`:
    ```bash
    docker run -v testvolume:/data -it --rm ubuntu /bin/bash
