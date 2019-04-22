@@ -6,9 +6,9 @@ IMAGE_NAME ?= ${DRIVER_NAME}
 # must be the same as in `config.Name`
 DRIVER_EXECUTABLE_NAME = nvd
 
-DOCKER_FILE_PRE_RELEASE = Dockerfile.pre-release
-DOCKER_IMAGE_PRE_RELEASE = nexenta-docker-driver-pre-release
-DOCKER_CONTAINER_PRE_RELEASE = ${DOCKER_IMAGE_PRE_RELEASE}-container
+DOCKER_FILE_CHANGELOG = Dockerfile.changelog
+DOCKER_IMAGE_CHANGELOG = nexenta-docker-driver-changelog
+DOCKER_CONTAINER_CHANGELOG = ${DOCKER_IMAGE_CHANGELOG}-container
 
 REGISTRY_PRODUCTION ?= nexenta
 REGISTRY_DEVELOPMENT ?= 10.3.199.92:5000
@@ -110,13 +110,13 @@ release:
 .PHONY: generate-changelog
 generate-changelog:
 	@echo "Release tag: ${VERSION}\n"
-	docker build -f ${DOCKER_FILE_PRE_RELEASE} -t ${DOCKER_IMAGE_PRE_RELEASE} --build-arg VERSION=${VERSION} .
-	-docker rm -f ${DOCKER_CONTAINER_PRE_RELEASE}
-	docker create --name ${DOCKER_CONTAINER_PRE_RELEASE} ${DOCKER_IMAGE_PRE_RELEASE}
+	docker build -f ${DOCKER_FILE_CHANGELOG} -t ${DOCKER_IMAGE_CHANGELOG} --build-arg VERSION=${VERSION} .
+	-docker rm -f ${DOCKER_CONTAINER_CHANGELOG}
+	docker create --name ${DOCKER_CONTAINER_CHANGELOG} ${DOCKER_IMAGE_CHANGELOG}
 	docker cp \
-		${DOCKER_CONTAINER_PRE_RELEASE}:/go/src/github.com/Nexenta/nexenta-docker-driver/CHANGELOG.md \
+		${DOCKER_CONTAINER_CHANGELOG}:/go/src/github.com/Nexenta/nexenta-docker-driver/CHANGELOG.md \
 		./CHANGELOG.md
-	docker rm ${DOCKER_CONTAINER_PRE_RELEASE}
+	docker rm ${DOCKER_CONTAINER_CHANGELOG}
 
 .PHONY: update-latest
 update-latest:
