@@ -1,20 +1,19 @@
-# NexentaStor Volume Driver for Docker (v1.0.0)
+# NexentaStor Volume Driver for Docker
 
-[![Build Status](https://travis-ci.org/Nexenta/nexenta-docker-driver.svg?branch=1.0.0)](https://travis-ci.org/Nexenta/nexenta-docker-driver)
+[![Build Status](https://travis-ci.org/Nexenta/nexenta-docker-driver.svg?branch=master)](https://travis-ci.org/Nexenta/nexenta-docker-driver)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Nexenta/nexenta-docker-driver)](https://goreportcard.com/report/github.com/Nexenta/nexenta-docker-driver)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
-This branch is currently under **development**, consider to wait for stable version before using in production.
+This is **development** repository,
+stable versions are published on [DockerHub driver page](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin/tags).
 
 NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nexenta.com/products/nexentastor).
 
-DockerHub driver page: [https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin).
-
 ## Supported versions
 
-|                | NexentaStor 5.1                                                      | NexentaStor 5.2                                                      |
-|----------------|----------------------------------------------------------------------|----------------------------------------------------------------------|
-| Docker >=17.06 | [1.0.0](https://github.com/Nexenta/nexenta-docker-driver/tree/1.0.0) | [1.0.0](https://github.com/Nexenta/nexenta-docker-driver/tree/1.0.0) |
+|                | NexentaStor 5.1                                                       | NexentaStor 5.2                                                       |
+|----------------|-----------------------------------------------------------------------|-----------------------------------------------------------------------|
+| Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin/tags) |
 
 ## Requirements
 
