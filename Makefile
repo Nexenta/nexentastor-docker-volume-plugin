@@ -93,7 +93,7 @@ release:
 		4. Plugin version '${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}' will be pushed to hub.docker.com\n \
 		5. CHANGELOG.md file will be updated\n \
 		6. Git tag '${VERSION}' will be created and pushed to the repository.\n \
-		7. Ask to update 'latest' tag on hub.docker.com, update it if needed.\n\n \
+		7. Update for 'latest' tag will be suggested, if needed, hub.docker.com 'latest' tag will be updated too.\n\n \
 		Are you sure? [y/N]: "
 	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
 	make generate-changelog
@@ -120,7 +120,7 @@ generate-changelog:
 
 .PHONY: update-latest
 update-latest:
-	@echo "Is this the latest version of the plugin?\n"
+	@echo "\nIs this the latest version of the plugin?\n"
 	@echo "If yes, this version will be pushed as 'latest' to hub.docker.com:"
 	@./plugin/rootfs/bin/nvd --version
 	@echo "\nPublish 'latest' version? [y/N]: "
