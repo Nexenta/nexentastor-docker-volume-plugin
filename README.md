@@ -1,4 +1,4 @@
-# NexentaStor Volume Driver for Docker
+# Docker Volume Driver for NexentaStor
 
 [![Build Status](https://travis-ci.org/Nexenta/nexenta-docker-driver.svg?branch=master)](https://travis-ci.org/Nexenta/nexenta-docker-driver)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Nexenta/nexenta-docker-driver)](https://goreportcard.com/report/github.com/Nexenta/nexenta-docker-driver)
