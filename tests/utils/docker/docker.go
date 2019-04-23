@@ -30,15 +30,13 @@ type PluginDeployment struct {
 
 func (d *PluginDeployment) createFormattedError(message string) func(error) error {
 	return func(err error) error {
-		fullErr := fmt.Errorf(
+		return fmt.Errorf(
 			"Docker plugin deployment failed (%s on %v): %s: %s",
 			d.PluginName,
 			d.RemoteClient,
 			message,
 			err,
 		)
-		d.log.Error(fullErr)
-		return fullErr
 	}
 }
 

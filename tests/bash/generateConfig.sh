@@ -28,6 +28,7 @@ username: admin                      # [required] NexentaStor REST API username
 password: Nexenta@1                  # [required] NexentaStor REST API password
 defaultDataset: testPool/testDataset # [required] 'pool/dataset' to use
 defaultDataIp: ${2:8:-5}             # [required] NexentaStor data IP or HA VIP
+defaultMountOptions: vers=4          # mount options (mount -o ...)
 EOL
 
 echo "Generated config file for tests:";
