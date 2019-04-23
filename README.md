@@ -139,6 +139,9 @@ make push-development
 
 # run all tests using local Docker registry:
 TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development
+
+# run all tests using local Docker registry (in container):
+TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development-container
 ```
 
 ### Debug

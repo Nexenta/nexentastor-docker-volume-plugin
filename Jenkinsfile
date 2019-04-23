@@ -28,7 +28,7 @@ pipeline {
         }
         stage('Tests [e2e-docker]') {
             steps {
-                sh 'TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development'
+                sh 'TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development-container'
             }
         }
         stage('Build production') {

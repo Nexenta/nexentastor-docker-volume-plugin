@@ -12,6 +12,7 @@ IMAGE_NAME ?= ${DRIVER_NAME}
 DRIVER_EXECUTABLE_NAME = nvd
 
 DOCKER_FILE_TESTS = Dockerfile.tests
+DOCKER_IMAGE_TESTS = nexenta-docker-driver-tests
 DOCKER_FILE_CHANGELOG = Dockerfile.changelog
 DOCKER_IMAGE_CHANGELOG = nexenta-docker-driver-changelog
 DOCKER_CONTAINER_CHANGELOG = ${DOCKER_IMAGE_CHANGELOG}-container
@@ -108,6 +109,12 @@ test-e2e-docker-development: check-env-TEST_DOCKER_IP
 		--ssh="root@${TEST_DOCKER_IP}" \
 		--plugin="${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION}" \
 		--config="./_configs/single-ns.yaml"
+.PHONY: test-e2e-docker-development-container
+test-e2e-docker-development-container: check-env-TEST_DOCKER_IP
+	docker build -f ${DOCKER_FILE_TESTS} -t ${DOCKER_IMAGE_TESTS} .
+	docker run -i --rm -v ${HOME}/.ssh:/root/.ssh:ro \
+		-e VERSION=${VERSION} -e NOCOLORS=${NOCOLORS} -e TEST_DOCKER_IP=${TEST_DOCKER_IP} \
+		${DOCKER_IMAGE_TESTS} test-e2e-docker-development
 
 .PHONY: check-env-TEST_DOCKER_IP
 check-env-TEST_DOCKER_IP:
