@@ -36,7 +36,7 @@ username: admin                       # [required] NexentaStor REST API username
 password: Nexenta@1                   # [required] NexentaStor REST API password
 defaultDataset: testPool/testDataset  # [required] 'pool/dataset' to use
 defaultDataIp: ${TEST_NS_SINGLE:8:-5} # [required] NexentaStor data IP or HA VIP
-EOL;
+EOL
                     echo "Generated config file for tests:";
                     cat ./tests/e2e/_configs/single-ns.yaml;
                     TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development-container;
