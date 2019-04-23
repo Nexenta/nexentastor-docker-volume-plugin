@@ -135,6 +135,12 @@ func (c *Config) Validate() error {
 	if c.Password == "" {
 		errors = append(errors, fmt.Sprintf("parameter 'password' is missed"))
 	}
+	if c.DefaultDataset == "" {
+		errors = append(errors, fmt.Sprintf("parameter 'defaultDataset' is missed"))
+	}
+	if c.DefaultDataIP == "" {
+		errors = append(errors, fmt.Sprintf("parameter 'defaultDataIp' is missed"))
+	}
 
 	if len(errors) != 0 {
 		return fmt.Errorf("Bad format, fix following issues: %s", strings.Join(errors, "; "))

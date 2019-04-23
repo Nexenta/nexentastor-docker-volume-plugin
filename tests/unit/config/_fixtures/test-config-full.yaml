@@ -1,0 +1,6 @@
+restIp: https://10.1.1.1:8443,https://10.1.1.2:8443
+username: usr
+password: pwd
+defaultDataset: poolA/datasetA
+defaultDataIp: 20.1.1.1
+defaultMountOptions: noatime

@@ -1,0 +1,3 @@
+restIp: https://10.1.1.1:8443,https://10.1.1.2:BAD_PORT
+username: usr
+password: pwd

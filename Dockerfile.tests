@@ -1,0 +1,21 @@
+#TODO use Go 1.12
+
+# tests container
+FROM golang:1.11
+
+# install deps
+RUN apt-get -q update &&\
+    apt-get -q install -y -o Dpkg::Options::="--force-confnew" nfs-common &&\
+    apt-get -q autoremove &&\
+    apt-get -q clean -y &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    rm -f /var/cache/apt/*.bin
+
+WORKDIR /go/src/github.com/Nexenta/nexenta-docker-driver/
+COPY . ./
+
+ARG VERSION
+ENV VERSION=$VERSION
+
+ENTRYPOINT ["make"]
+CMD ["test"]

@@ -6,6 +6,7 @@ IMAGE_NAME ?= ${DRIVER_NAME}
 # must be the same as in `config.Name`
 DRIVER_EXECUTABLE_NAME = nvd
 
+DOCKER_FILE_TESTS = Dockerfile.tests
 DOCKER_FILE_CHANGELOG = Dockerfile.changelog
 DOCKER_IMAGE_CHANGELOG = nexenta-docker-driver-changelog
 DOCKER_CONTAINER_CHANGELOG = ${DOCKER_IMAGE_CHANGELOG}-container
@@ -81,6 +82,20 @@ uninstall-development:
 uninstall-production:
 	docker plugin disable -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION} || true
 	docker plugin remove -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION} || true
+
+
+.PHONY: test
+test: test-unit
+
+.PHONY: test-unit
+test-unit:
+	go test ./tests/unit/arrays -v -count 1
+	go test ./tests/unit/config -v -count 1
+.PHONY: test-unit-container
+test-unit-container:
+	docker build -f ${DOCKER_FILE_TESTS} -t ${IMAGE_NAME}-test --build-arg VERSION=${VERSION} .
+	docker run -i --rm -e NOCOLORS=${NOCOLORS} ${IMAGE_NAME}-test test-unit
+
 
 .PHONY: release
 release:
