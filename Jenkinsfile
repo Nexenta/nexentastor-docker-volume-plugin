@@ -1,6 +1,7 @@
 pipeline {
     parameters {
-        string(name: 'TEST_DOCKER_IP', defaultValue: '10.3.199.249', description: 'Docker setup IP address to test on', trim: true)
+        string(name: 'TEST_DOCKER_IP', defaultValue: '10.3.199.246', description: 'Docker setup IP address to test on', trim: true)
+        string(name: 'TEST_NS_SINGLE', defaultValue: 'https://10.3.199.247:8443', description: 'Single NS API address', trim: true)
     }
     options {
         disableConcurrentBuilds()
@@ -28,7 +29,18 @@ pipeline {
         }
         stage('Tests [e2e-docker]') {
             steps {
-                sh 'TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development-container'
+                sh '''
+                    cat >./tests/e2e/_configs/single-ns.yaml <<EOL
+restIp: ${TEST_NS_SINGLE}             # [required] NexentaStor REST API endpoint(s)
+username: admin                       # [required] NexentaStor REST API username
+password: Nexenta@1                   # [required] NexentaStor REST API password
+defaultDataset: testPool/testDataset  # [required] 'pool/dataset' to use
+defaultDataIp: ${TEST_NS_SINGLE:8:-5} # [required] NexentaStor data IP or HA VIP
+EOL;
+                    echo "Generated config file for tests:";
+                    cat ./tests/e2e/_configs/single-ns.yaml;
+                    TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development-container;
+                '''
             }
         }
         stage('Build production') {
