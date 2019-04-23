@@ -30,15 +30,7 @@ pipeline {
         stage('Tests [e2e-docker]') {
             steps {
                 sh '''
-                    cat >./tests/e2e/_configs/single-ns.yaml <<EOL
-restIp: ${TEST_NS_SINGLE}             # [required] NexentaStor REST API endpoint(s)
-username: admin                       # [required] NexentaStor REST API username
-password: Nexenta@1                   # [required] NexentaStor REST API password
-defaultDataset: testPool/testDataset  # [required] 'pool/dataset' to use
-defaultDataIp: ${TEST_NS_SINGLE:8:-5} # [required] NexentaStor data IP or HA VIP
-EOL
-                    echo "Generated config file for tests:";
-                    cat ./tests/e2e/_configs/single-ns.yaml;
+                    ./tests/bash/generateConfig.sh tests/e2e/_configs/single-ns.yaml ${TEST_NS_SINGLE}
                     TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development-container;
                 '''
             }
