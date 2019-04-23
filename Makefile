@@ -1,4 +1,9 @@
 # NexentaStor Docker Volume Driver makefile
+#
+# Test options to be set before run tests:
+# - NOCOLOR=1                   # disable colors
+# - TEST_DOCKER_IP=10.3.199.249 # for e2e Docker tests
+#
 
 DRIVER_NAME = nexentastor-nfs-plugin
 IMAGE_NAME ?= ${DRIVER_NAME}
@@ -96,6 +101,19 @@ test-unit-container:
 	docker build -f ${DOCKER_FILE_TESTS} -t ${IMAGE_NAME}-test --build-arg VERSION=${VERSION} .
 	docker run -i --rm -e NOCOLORS=${NOCOLORS} ${IMAGE_NAME}-test test-unit
 
+# run e2e docker tests using image from local docker registry
+.PHONY: test-e2e-docker-development
+test-e2e-docker-development: check-env-TEST_DOCKER_IP
+	go test tests/e2e/driver_test.go -v -count 1 -failfast \
+		--ssh="root@${TEST_DOCKER_IP}" \
+		--plugin="${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION}" \
+		--config="./_configs/single-ns.yaml"
+
+.PHONY: check-env-TEST_DOCKER_IP
+check-env-TEST_DOCKER_IP:
+ifeq ($(strip ${TEST_DOCKER_IP}),)
+	$(error "Error: environment variable TEST_DOCKER_IP is not set (e.i. 10.3.199.249)")
+endif
 
 .PHONY: release
 release:

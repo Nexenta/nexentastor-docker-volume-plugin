@@ -1,4 +1,7 @@
 pipeline {
+    parameters {
+        string(name: 'TEST_DOCKER_IP', defaultValue: '10.3.199.249', description: 'Docker setup IP address to test on', trim: true)
+    }
     options {
         disableConcurrentBuilds()
     }
@@ -18,10 +21,14 @@ pipeline {
                 sh 'make push-development'
             }
         }
-        stage('Tests') {
+        stage('Tests [unit]') {
             steps {
-                sh 'No tests found'
-                sh 'exit 1'
+                sh 'make test-unit-container'
+            }
+        }
+        stage('Tests [e2e-docker]') {
+            steps {
+                sh 'TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development'
             }
         }
         stage('Build production') {

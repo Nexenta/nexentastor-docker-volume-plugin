@@ -131,6 +131,16 @@ make push-development
 ~/go/bin/dep ensure
 ```
 
+### Test
+```bash
+# Test options:
+# - TEST_DOCKER_IP=10.3.199.249 # Docker setup IP address to test on
+# - NOCOLORS=true               # disable colors
+
+# run all tests using local Docker registry:
+TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development
+```
+
 ### Debug
 
 Send requests to the driver:

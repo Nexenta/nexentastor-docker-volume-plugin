@@ -8,7 +8,7 @@
 #   - enables Docker plugin
 #   - creates Docker volume using the plugin
 #   - runs container with the volume mounted and writes file to the volume (memorize MD5 of the file)
-#   - mounts NS filesystem localy to get and memorize MD5 of the file
+#   - mounts NS filesystem locally to get and memorize MD5 of the file
 #   - runs another container with the volume mounted and memorize MD5 of the file
 #   - removes Docker volume using the plugin
 #   - prints all MD5 hash sums to validate them (should be equal)
