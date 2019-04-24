@@ -1,8 +1,8 @@
-# this Dockerfile build an image that can be used as rootfs for Docker volume driver
+# this Dockerfile build an image that can be used as rootfs for Docker volume plugin
 
 # build container
 FROM golang:1.11 as builder
-WORKDIR /go/src/github.com/Nexenta/nexenta-docker-driver/
+WORKDIR /go/src/github.com/Nexenta/nexentastor-docker-volume-plugin/
 COPY .git ./.git
 COPY cmd ./cmd
 COPY pkg ./pkg
@@ -12,9 +12,9 @@ ARG VERSION
 ENV VERSION=$VERSION
 RUN make build-go
 
-# driver rootfs container
+# plugin rootfs container
 FROM alpine:3.9.2
-COPY --from=builder /go/src/github.com/Nexenta/nexenta-docker-driver/bin/nvd /bin/nvd
-RUN /bin/nvd --version
-RUN mkdir -p /mnt/nvd
+COPY --from=builder /go/src/github.com/Nexenta/nexentastor-docker-volume-plugin/bin/nexentastor-docker-volume-plugin /bin/nexentastor-docker-volume-plugin
+RUN /bin/nexentastor-docker-volume-plugin --version
+RUN mkdir -p /mnt/nexentastor-docker-volume-plugin
 ENTRYPOINT ["bin/sh"]

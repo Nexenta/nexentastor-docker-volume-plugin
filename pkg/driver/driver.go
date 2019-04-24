@@ -10,12 +10,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Nexenta/go-nexentastor/pkg/ns"
-	"github.com/Nexenta/nexenta-docker-driver/pkg/arrays"
-	"github.com/Nexenta/nexenta-docker-driver/pkg/config"
-	"github.com/Nexenta/nexenta-docker-driver/pkg/mounter"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/arrays"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/config"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/mounter"
 )
 
-// Driver - Docker Volume Driver for NS, it implements methods /VolumeDriver.*:
+// Driver - Docker Volume driver for NS, it implements methods /VolumeDriver.*:
 // https://docs.docker.com/v17.09/engine/extend/plugins_volume/
 type Driver struct {
 	log        *logrus.Entry
@@ -343,9 +343,9 @@ func (d *Driver) Path(req *volume.PathRequest) (*volume.PathResponse, error) {
 // /var/lib/docker/plugins/<PLUGIN_ID>/propagated-mount/bind/<VOLUME_NAME>-<CONTAINER_ID> - bind container(s) to share
 //
 // Inside driver's container all 'mount' happen under:
-// /mnt/nvd/volume/<VOLUME_NAME>              - mounted NS share
-// /mnt/nvd/bind/<VOLUME_NAME>-<CONTAINER_ID> - bind container(s) to share
-// `/mnt/nvd` is a "propagatedmount" parameter in the `config.json`.
+// /mnt/nexentastor-docker-volume-plugin/volume/<VOLUME_NAME>              - mounted NS share
+// /mnt/nexentastor-docker-volume-plugin/bind/<VOLUME_NAME>-<CONTAINER_ID> - bind container(s) to share
+// `/mnt/nexentastor-docker-volume-plugin` is a "propagatedmount" parameter in the `config.json`.
 //
 func (d *Driver) Mount(req *volume.MountRequest) (*volume.MountResponse, error) {
 	l := d.log.WithField("func", "Mount()")
@@ -571,16 +571,16 @@ func (d *Driver) Unmount(req *volume.UnmountRequest) error {
 }
 
 // getVolumeMountPoint is a path inside driver's container:
-// /mnt/nvd/volume/<VOLUME_NAME>
+// /mnt/nexentastor-docker-volume-plugin/volume/<VOLUME_NAME>
 func getVolumeMountPoint(volumeName string) string {
-	return filepath.Join(config.DriverMountPointsRoot, "volume", volumeName)
+	return filepath.Join(config.PluginMountPointsRoot, "volume", volumeName)
 }
 
 // getContainerBindMountPath is a path inside driver's container:
-// /mnt/nvd/bind/<CONTAINER_ID>-<VOLUME_NAME>
+// /mnt/nexentastor-docker-volume-plugin/bind/<CONTAINER_ID>-<VOLUME_NAME>
 func getContainerBindMountPath(volumeName, containerID string) string {
 	mountPointName := fmt.Sprintf("%s-%s", volumeName, containerID)
-	return filepath.Join(config.DriverMountPointsRoot, "bind", mountPointName)
+	return filepath.Join(config.PluginMountPointsRoot, "bind", mountPointName)
 }
 
 // getNFSMountSource return NFS mount source to use in `mount` command

@@ -1,20 +1,19 @@
-# NexentaStor Docker Volume Driver makefile
+# NexentaStor Docker Volume plugin makefile
 #
 # Test options to be set before run tests:
 # - NOCOLOR=1                   # disable colors
 # - TEST_DOCKER_IP=10.3.199.249 # for e2e Docker tests
 #
 
-DRIVER_NAME = nexentastor-nfs-plugin
-IMAGE_NAME ?= ${DRIVER_NAME}
+PLUGIN_NAME = nexentastor-docker-volume-plugin
+IMAGE_NAME ?= ${PLUGIN_NAME}
 
-# must be the same as in `config.Name`
-DRIVER_EXECUTABLE_NAME = nvd
+GIT_REPOSITORY = github.com/Nexenta/${PLUGIN_NAME}
 
 DOCKER_FILE_TESTS = Dockerfile.tests
-DOCKER_IMAGE_TESTS = nexenta-docker-driver-tests
+DOCKER_IMAGE_TESTS = ${PLUGIN_NAME}-tests
 DOCKER_FILE_CHANGELOG = Dockerfile.changelog
-DOCKER_IMAGE_CHANGELOG = nexenta-docker-driver-changelog
+DOCKER_IMAGE_CHANGELOG = ${PLUGIN_NAME}-changelog
 DOCKER_CONTAINER_CHANGELOG = ${DOCKER_IMAGE_CHANGELOG}-container
 
 REGISTRY_PRODUCTION ?= nexenta
@@ -26,31 +25,31 @@ VERSION ?= ${GIT_BRANCH}
 COMMIT ?= $(shell git rev-parse HEAD | cut -c 1-7)
 DATETIME ?= $(shell date -u +'%F_%T')
 LDFLAGS ?= \
-	-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Version=${VERSION} \
-	-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Commit=${COMMIT} \
-	-X github.com/Nexenta/nexenta-docker-driver/pkg/config.DateTime=${DATETIME}
+	-X ${GIT_REPOSITORY}/pkg/config.Version=${VERSION} \
+	-X ${GIT_REPOSITORY}/pkg/config.Commit=${COMMIT} \
+	-X ${GIT_REPOSITORY}/pkg/config.DateTime=${DATETIME}
 
 .PHONY: all
 all: build-development
 
 .PHONY: build-go
 build-go:
-	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/${DRIVER_EXECUTABLE_NAME} -ldflags "${LDFLAGS}" ./cmd
+	env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/${PLUGIN_NAME} -ldflags "${LDFLAGS}" ./cmd
 
 .PHONY: plugin-rootfs
 build-rootfs: clean
 	mkdir -p ./plugin/rootfs
 	docker build --no-cache -f Dockerfile.rootfs -t ${IMAGE_NAME}_${VERSION}:rootfs --build-arg VERSION=${VERSION} .
-	docker create ${IMAGE_NAME}_${VERSION}:rootfs > /tmp/.nvdContainerId
+	docker create ${IMAGE_NAME}_${VERSION}:rootfs > /tmp/.nexentastorDockerVolumePluginContainerId
 	@echo "Temporary container ID:"
-	@cat /tmp/.nvdContainerId
-	docker export $$(cat /tmp/.nvdContainerId) | tar -x -C ./plugin/rootfs
-	docker rm $$(cat /tmp/.nvdContainerId)
-	rm /tmp/.nvdContainerId
+	@cat /tmp/.nexentastorDockerVolumePluginContainerId
+	docker export $$(cat /tmp/.nexentastorDockerVolumePluginContainerId) | tar -x -C ./plugin/rootfs
+	docker rm $$(cat /tmp/.nexentastorDockerVolumePluginContainerId)
+	rm /tmp/.nexentastorDockerVolumePluginContainerId
 	@echo "---------------------------------------"
 	@echo "Plugin version:"
-	@./plugin/rootfs/bin/${DRIVER_EXECUTABLE_NAME} --version
-	@echo "Current UTC time: ($$(date -u +'%F_%T'))"
+	@./plugin/rootfs/bin/${PLUGIN_NAME} --version
+	@echo "Current UTC time:                               ($$(date -u +'%F_%T'))"
 	@echo "---------------------------------------"
 
 .PHONY: build-development
@@ -105,7 +104,7 @@ test-unit-container:
 # run e2e docker tests using image from local docker registry
 .PHONY: test-e2e-docker-development
 test-e2e-docker-development: check-env-TEST_DOCKER_IP
-	go test tests/e2e/driver_test.go -v -count 1 -failfast \
+	go test tests/e2e/plugin_test.go -v -count 1 -failfast \
 		--ssh="root@${TEST_DOCKER_IP}" \
 		--plugin="${REGISTRY_DEVELOPMENT}/${IMAGE_NAME}:${VERSION}" \
 		--config="./_configs/single-ns.yaml"
@@ -154,7 +153,7 @@ generate-changelog:
 	-docker rm -f ${DOCKER_CONTAINER_CHANGELOG}
 	docker create --name ${DOCKER_CONTAINER_CHANGELOG} ${DOCKER_IMAGE_CHANGELOG}
 	docker cp \
-		${DOCKER_CONTAINER_CHANGELOG}:/go/src/github.com/Nexenta/nexenta-docker-driver/CHANGELOG.md \
+		${DOCKER_CONTAINER_CHANGELOG}:/go/src/${GIT_REPOSITORY}/CHANGELOG.md \
 		./CHANGELOG.md
 	docker rm ${DOCKER_CONTAINER_CHANGELOG}
 
@@ -162,7 +161,7 @@ generate-changelog:
 update-latest:
 	@echo "\nIs this the latest version of the plugin?\n"
 	@echo "If yes, this version will be pushed as 'latest' to hub.docker.com:"
-	@./plugin/rootfs/bin/nvd --version
+	@./plugin/rootfs/bin/${PLUGIN_NAME} --version
 	@echo "\nPublish 'latest' version? [y/N]: "
 	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
 	cp config.json ./plugin/

@@ -1,9 +1,9 @@
 {
-    "description": "NexentaStor Volume Driver for Docker",
-    "documentation": "https://github.com/Nexenta/nexenta-docker-driver/",
-    "entrypoint": ["/bin/nvd"],
+    "description": "Docker Volume Plugin for NexentaStor",
+    "documentation": "https://github.com/Nexenta/nexentastor-docker-volume-plugin/",
+    "entrypoint": ["/bin/nexentastor-docker-volume-plugin"],
     "interface": {
-        "socket": "nvd.sock",
+        "socket": "nsdvp.sock",
         "types": ["docker.volumedriver/1.0"]
     },
     "linux": {
@@ -11,14 +11,14 @@
     },
     "mounts": [
         {
-            "destination": "/etc/nvd/",
+            "destination": "/etc/nexentastor-docker-volume-plugin/",
             "options": ["bind", "r"],
-            "source": "/etc/nvd/",
+            "source": "/etc/nexentastor-docker-volume-plugin/",
             "type": "bind"
         }
     ],
     "network": {
         "type": "host"
     },
-    "propagatedmount": "/mnt/nvd"
+    "propagatedmount": "/mnt/nexentastor-docker-volume-plugin"
 }

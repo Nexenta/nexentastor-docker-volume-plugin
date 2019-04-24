@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Nexenta/nexenta-docker-driver/pkg/config"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/config"
 )
 
 var testConfigParams = map[string]string{

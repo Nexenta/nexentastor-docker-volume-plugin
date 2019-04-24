@@ -3,7 +3,7 @@
 
 FROM golang:1.11
 
-WORKDIR /go/src/github.com/Nexenta/nexenta-docker-driver/
+WORKDIR /go/src/github.com/Nexenta/nexentastor-docker-volume-plugin/
 
 # deps
 RUN go get github.com/git-chglog/git-chglog/cmd/git-chglog

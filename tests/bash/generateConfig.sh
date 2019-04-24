@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# Convert environment variables to driver config.
+# Convert environment variables to plugin config.
 #
 # Usage:
 #  ./generateConfig.sh tests/e2e/_configs/single-ns.yaml https://10.3.199.247:8443

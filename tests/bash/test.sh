@@ -18,8 +18,8 @@ set -e
 set -x
 
 # config
-#PLUGIN="10.3.199.92:5000/nexentastor-nfs-plugin:1.0.0"
-PLUGIN="nexenta/nexentastor-nfs-plugin:1.0.0"
+#PLUGIN="10.3.199.92:5000/nexentastor-docker-volume-plugin:1.0.0"
+PLUGIN="nexenta/nexentastor-docker-volume-plugin:1.0.0"
 VOLUME_NAME="testvolume"
 MOUNT_SOURCE="10.3.199.243:/spool01/dataset/${VOLUME_NAME}"
 MOUNT_TARGET="testmount"
@@ -49,7 +49,7 @@ rm -rf /tmp/${MOUNT_TARGET}
 MD5_3=$(docker run -v ${VOLUME_NAME}:/data2 -it --rm ubuntu /bin/bash -c "md5sum /data2/${TEST_FILE_NAME}")
 docker volume remove ${VOLUME_NAME}
 docker volume list
-tail -1000 /var/lib/docker/plugins/*/rootfs/var/log/nvd.log
+tail -1000 /var/lib/docker/plugins/*/rootfs/var/log/nexentastor-docker-volume-plugin.log
 
 set +x
 echo ""

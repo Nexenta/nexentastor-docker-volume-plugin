@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Nexenta/nexenta-docker-driver/pkg/arrays"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/arrays"
 )
 
 func TestContainsString(t *testing.T) {

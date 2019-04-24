@@ -6,12 +6,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/Nexenta/nexenta-docker-driver/tests/utils/remote"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/tests/utils/remote"
 )
 
 const (
 	// plugin config file on remote Docker setup
-	pluginConfigPath = "/etc/nvd/nvd.yaml"
+	pluginConfigPath = "/etc/nexentastor-docker-volume-plugin/config.yaml"
 )
 
 // PluginDeployment - Docker plugin deployment

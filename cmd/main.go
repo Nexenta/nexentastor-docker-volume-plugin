@@ -10,19 +10,19 @@ import (
 	"github.com/docker/go-plugins-helpers/volume"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Nexenta/nexenta-docker-driver/pkg/config"
-	"github.com/Nexenta/nexenta-docker-driver/pkg/driver"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/config"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/driver"
 )
 
 const (
-	defaultConfigFile    = "/etc/nvd/nvd.yaml"
-	defaultSocketAddress = "/run/docker/plugins/nvd.sock"
+	defaultConfigFile    = "/etc/nexentastor-docker-volume-plugin/config.yaml"
+	defaultSocketAddress = "/run/docker/plugins/nsdvp.sock" // full path cannot be longer than 107 characters on Linux
 )
 
 func main() {
 	var (
-		configFile = flag.String("config", defaultConfigFile, "driver config file")
-		version    = flag.Bool("version", false, "print driver version")
+		configFile = flag.String("config", defaultConfigFile, "plugin config file")
+		version    = flag.Bool("version", false, "print plugin version")
 	)
 
 	flag.Parse()
@@ -36,7 +36,7 @@ func main() {
 	l := initLogger()
 
 	l.Infof("%s@%s-%s (%s) started...", config.Name, config.Version, config.Commit, config.DateTime)
-	l.Info("run driver with CLI options:")
+	l.Info("run plugin with CLI options:")
 	l.Infof("- config file: '%s'", *configFile)
 
 	// initial read and validate config file

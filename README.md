@@ -1,11 +1,11 @@
-# Docker Volume Driver for NexentaStor
+# Docker Volume Plugin for NexentaStor
 
-[![Build Status](https://travis-ci.org/Nexenta/nexenta-docker-driver.svg?branch=master)](https://travis-ci.org/Nexenta/nexenta-docker-driver)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Nexenta/nexenta-docker-driver)](https://goreportcard.com/report/github.com/Nexenta/nexenta-docker-driver)
+[![Build Status](https://travis-ci.org/Nexenta/nexentastor-docker-volume-plugin.svg?branch=master)](https://travis-ci.org/Nexenta/nexentastor-docker-volume-plugin)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Nexenta/nexentastor-docker-volume-plugin)](https://goreportcard.com/report/github.com/Nexenta/nexentastor-docker-volume-plugin)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 This is **development** repository,
-stable versions are published on [DockerHub driver page](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin/tags).
+stable versions are published on [DockerHub plugin page](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags).
 
 NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nexenta.com/products/nexentastor).
 
@@ -13,7 +13,7 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
 
 |                | NexentaStor 5.1                                                       | NexentaStor 5.2                                                       |
 |----------------|-----------------------------------------------------------------------|-----------------------------------------------------------------------|
-| Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-nfs-plugin/tags) |
+| Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
 
 ## Requirements
 
@@ -25,10 +25,10 @@ apt install -y nfs-common
 
 ## Installation
 
-1. Create NexentaStor dataset for the volume driver, example: `spool01/dataset`.
-   Volume driver will create filesystems in this dataset and mount them to use as Docker volumes.
-2. Create driver configuration file: `/etc/nvd/nvd.yaml`. Driver configuration
-    [example](/etc/nvd/nvd.yaml):
+1. Create NexentaStor dataset for the volume plugin, example: `spool01/dataset`.
+   Volume plugin will create filesystems in this dataset and mount them to use as Docker volumes.
+2. Create plugin configuration file: `/etc/nexentastor-docker-volume-plugin/config.yaml`. Plugin configuration
+    [example](/etc/nexentastor-docker-volume-plugin/config.yaml):
    ```yaml
    restIp: https://10.3.3.4:8443,https://10.3.3.5:8443 # [required] NexentaStor REST API endpoint(s)
    username: admin                                     # [required] NexentaStor REST API username
@@ -39,36 +39,38 @@ apt install -y nfs-common
    #debug: true                                        # more logs (true/false)
    ```
 
-   All driver configuration options:
-
-   | Name                  | Description                                                     | Required | Example                 |
-   |-----------------------|-----------------------------------------------------------------|----------|-------------------------|
-   | `restIp`              | NexentaStor REST API endpoint(s); `,` to separate cluster nodes | yes      | `https://10.3.3.4:8443` |
-   | `username`            | NexentaStor REST API username                                   | yes      | `admin`                 |
-   | `password`            | NexentaStor REST API password                                   | yes      | `p@ssword`              |
-   | `defaultDataset`      | parent dataset for driver's filesystems ("pool/dataset")        | yes      | `spool01/dataset`       |
-   | `defaultDataIp`       | NexentaStor data IP or HA VIP for mounting shares               | yes      | `20.20.20.21`           |
-   | `defaultMountOptions` | NFS mount options: `mount -o ...`<br>(default: "")              | no       | `noatime,nosuid`        |
-   | `debug`               | print more logs (default: false)                                | no       | `true`                  |
-
-   **Note**: parameter `restIp` can point on a single NexentaStor appliance or on each of the nodes of HA cluster.
-
-3. Install volume driver:
+3. Install volume plugin:
    ```
-   docker plugin install nexenta/nexentastor-nfs-plugin:1.0.0
+   docker plugin install nexenta/nexentastor-docker-volume-plugin:1.0.0
    ```
-4. Enable volume driver:
+4. Enable volume plugin:
    ```
-   docker plugin enable nexenta/nexentastor-nfs-plugin:1.0.0
+   docker plugin enable nexenta/nexentastor-docker-volume-plugin:1.0.0
    ```
 
-Volume driver should be listed after installation:
+Volume plugin should be listed after installation:
 
 ```
 $ docker plugin list
-ID             NAME                                   DESCRIPTION                            ENABLED
-b227326b403d   nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver for Docker   true
+ID             NAME                                             DESCRIPTION                            ENABLED
+b227326b403d   nexenta/nexentastor-docker-volume-plugin:1.0.0   Docker Volume Plugin for NexentaStor   true
 ```
+
+## Configuration
+
+All plugin configuration options:
+
+| Name                  | Description                                                     | Required | Example                 |
+|-----------------------|-----------------------------------------------------------------|----------|-------------------------|
+| `restIp`              | NexentaStor REST API endpoint(s); `,` to separate cluster nodes | yes      | `https://10.3.3.4:8443` |
+| `username`            | NexentaStor REST API username                                   | yes      | `admin`                 |
+| `password`            | NexentaStor REST API password                                   | yes      | `p@ssword`              |
+| `defaultDataset`      | parent dataset for plugin's filesystems ("pool/dataset")        | yes      | `spool01/dataset`       |
+| `defaultDataIp`       | NexentaStor data IP or HA VIP for mounting shares               | yes      | `20.20.20.21`           |
+| `defaultMountOptions` | NFS mount options: `mount -o ...`<br>(default: "")              | no       | `noatime,nosuid`        |
+| `debug`               | print more logs (default: false)                                | no       | `true`                  |
+
+**Note**: parameter `restIp` can point on a single NexentaStor appliance or on each of the nodes of HA cluster.
 
 ## Usage
 
@@ -79,7 +81,7 @@ b227326b403d   nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver 
    ```
 - Create Docker volume `testvolume` if NexentaStor filesystem doesn't exist:
    ```bash
-   docker volume create -d nexenta/nexentastor-nfs-plugin:1.0.0 --name=testvolume
+   docker volume create -d nexenta/nexentastor-docker-volume-plugin:1.0.0 --name=testvolume
    ```
    **Note**: This operation will create a filesystem on NexentaStore in case it doesn't exist.
 - Run container which uses created volume `testvolume`:
@@ -92,11 +94,11 @@ b227326b403d   nexenta/nexentastor-nfs-plugin:1.0.0   NexentaStor Volume Driver 
 ## Uninstall
 
 ```bash
-# disable driver
-docker plugin disable nexenta/nexentastor-nfs-plugin:1.0.0
+# disable plugin
+docker plugin disable nexenta/nexentastor-docker-volume-plugin:1.0.0
 
-# remove driver
-docker plugin remove nexenta/nexentastor-nfs-plugin:1.0.0
+# remove plugin
+docker plugin remove nexenta/nexentastor-docker-volume-plugin:1.0.0
 ```
 
 ## Development
@@ -146,17 +148,17 @@ TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development-container
 
 ### Debug
 
-Send requests to the driver:
+Send requests to the plugin:
 ```bash
-# driver container id can be found in `journalctl -f -u docker.service` output
+# plugin container id can be found in `journalctl -f -u docker.service` output
 curl -X POST \
     -d '{}' \
     -H "Content-Type: application/json" \
-    --unix-socket /run/docker/plugins/%ID%/nvd.sock \
+    --unix-socket /run/docker/plugins/%ID%/nsdvp.sock \
     http://localhost/VolumeDriver.List
 
 # check built version
-./plugin/rootfs/bin/nvd --version
+./plugin/rootfs/bin/nexentastor-docker-volume-plugin --version
 ```
 
 ### Release
@@ -176,27 +178,27 @@ new git tag should be created.
 
 2. Release a new version. This script does following:
    - generates new `CHANGELOG.md`
-   - builds plugin version 'nexenta/nexentastor-nfs-plugin:X.X.X'
+   - builds plugin version 'nexenta/nexentastor-docker-volume-plugin:X.X.X'
    - logs in to hub.docker.com
-   - publishes plugin version 'nexenta/nexentastor-nfs-plugin:X.X.X' to hub.docker.com
+   - publishes plugin version 'nexenta/nexentastor-docker-volume-plugin:X.X.X' to hub.docker.com
    - creates git tag 'X.X.X' and pushes it to the repository
    - asks to update 'latest' tag on hub.docker.com, updates it if needed.
 ```bash
 VERSION=X.X.X make release
 ```
 
-3. Update Github [releases](https://github.com/Nexenta/nexenta-docker-driver/releases).
+3. Update Github [releases](https://github.com/Nexenta/nexentastor-docker-volume-plugin/releases).
 
 ## Troubleshooting
 
-- Show installed drivers:
+- Show installed plugins:
   ```bash
   docker plugin list
   ```
-- Driver logs
+- Plugin logs
   ```bash
   # log file
-  tail -f /var/lib/docker/plugins/*/rootfs/var/log/nvd.log
+  tail -f /var/lib/docker/plugins/*/rootfs/var/log/nexentastor-docker-volume-plugin.log
 
   # system journal
   journalctl -f -u docker.service

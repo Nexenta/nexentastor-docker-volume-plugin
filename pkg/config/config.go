@@ -11,30 +11,30 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Version - driver version, to set version set flags:
-// go build -ldflags "-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Version=1.0.0"
+// Version - plugin version, to set version set flags:
+// go build -ldflags "-X github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/config.Version=1.0.0"
 var Version string
 
-// Commit - driver last commit, to set commit set flags:
-// go build -ldflags "-X github.com/Nexenta/nexenta-docker-driver/pkg/config.Commit=..."
+// Commit - plugin last commit, to set commit set flags:
+// go build -ldflags "-X github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/config.Commit=..."
 var Commit string
 
-// DateTime - driver build datetime, to set commit set flags:
-// go build -ldflags "-X github.com/Nexenta/nexenta-docker-driver/pkg/config.DateTime=..."
+// DateTime - plugin build datetime, to set commit set flags:
+// go build -ldflags "-X github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/config.DateTime=..."
 var DateTime string
 
-// persistent driver's config
+// persistent plugin's config
 const (
-	// Name - driver's executable name, must be the same as in `Makefile`
-	Name = "nvd"
+	// Name - plugin's executable name, must be the same as in `Makefile`
+	Name = "nexentastor-docker-volume-plugin"
 
-	// DriverMountPointsRoot - path inside the driver container to mount volumes
-	// this path must be propagated to host via "propogatedmount" parameter in driver's "config.json"
-	// TODO read this parameter from driver's "config.json" file "propogatedmount" parameter?
-	DriverMountPointsRoot = "/mnt/nvd"
+	// PluginMountPointsRoot - path inside the plugin container to mount volumes
+	// this path must be propagated to host via "propogatedmount" parameter in plugin's "config.json"
+	// TODO read this parameter from plugin's "config.json" file "propogatedmount" parameter?
+	PluginMountPointsRoot = "/mnt/nexentastor-docker-volume-plugin"
 
-	// path to a log file inside the driver's container
-	LogFile = "/var/log/nvd.log"
+	// path to a log file inside the plugin's container
+	LogFile = "/var/log/nexentastor-docker-volume-plugin.log"
 )
 
 // supported mount filesystem types
@@ -46,7 +46,7 @@ const (
 // a valid NS REST endpoint
 const addressRegExp = "^https?://[^:]+:[0-9]{1,5}$"
 
-// Config - driver config from file
+// Config - plugin config from file
 type Config struct {
 	Address             string `yaml:"restIp"`
 	Username            string `yaml:"username"`

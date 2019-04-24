@@ -1,4 +1,4 @@
-package driver_test
+package plugin_test
 
 import (
 	"flag"
@@ -13,9 +13,9 @@ import (
 	nested "github.com/antonfisher/nested-logrus-formatter"
 	"github.com/sirupsen/logrus"
 
-	pluginConfig "github.com/Nexenta/nexenta-docker-driver/pkg/config"
-	"github.com/Nexenta/nexenta-docker-driver/tests/utils/docker"
-	"github.com/Nexenta/nexenta-docker-driver/tests/utils/remote"
+	pluginConfig "github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/config"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/tests/utils/docker"
+	"github.com/Nexenta/nexentastor-docker-volume-plugin/tests/utils/remote"
 )
 
 var (

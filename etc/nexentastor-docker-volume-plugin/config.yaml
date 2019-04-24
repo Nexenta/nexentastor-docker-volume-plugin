@@ -1,5 +1,5 @@
-# NexentaStor Volume Driver configuration file
-# /etc/nvd/nvd.yaml
+# NexentaStor Volume plugin configuration file
+# /etc/nexentastor-docker-volume-plugin/config.yaml
 
 restIp: https://10.3.199.243:8443 # [required] NexentaStor REST API endpoint(s)
 username: admin                   # [required] NexentaStor REST API username

@@ -11,7 +11,7 @@ RUN apt-get -q update &&\
     rm -rf /var/lib/apt/lists/* &&\
     rm -f /var/cache/apt/*.bin
 
-WORKDIR /go/src/github.com/Nexenta/nexenta-docker-driver/
+WORKDIR /go/src/github.com/Nexenta/nexentastor-docker-volume-plugin/
 COPY . ./
 
 ARG VERSION
