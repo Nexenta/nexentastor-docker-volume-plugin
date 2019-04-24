@@ -187,7 +187,14 @@ new git tag should be created.
 VERSION=X.X.X make release
 ```
 
-3. Update Github [releases](https://github.com/Nexenta/nexentastor-docker-volume-plugin/releases).
+3. Push `latest` tag if needed.
+   This command takes the most recent built plugin (from local `./plugin` folder)
+   and pushes it as `latest` tag to hub.docker.com.
+   ```
+   make update-latest
+   ```
+
+4. Update Github [releases](https://github.com/Nexenta/nexentastor-docker-volume-plugin/releases).
 
 ## Troubleshooting
 
