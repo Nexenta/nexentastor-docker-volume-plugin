@@ -5,14 +5,15 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 This is **development** repository,
-stable versions are published on [DockerHub plugin page](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags).
+stable versions are published on
+[DockerHub plugin page](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags).
 
 NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nexenta.com/products/nexentastor).
 
 ## Supported versions
 
-|                | NexentaStor 5.1                                                       | NexentaStor 5.2                                                       |
-|----------------|-----------------------------------------------------------------------|-----------------------------------------------------------------------|
+|                | NexentaStor 5.1                                                                 | NexentaStor 5.2                                                                 |
+|----------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
 
 ## Requirements
@@ -28,7 +29,7 @@ apt install -y nfs-common
 1. Create NexentaStor dataset for the volume plugin, example: `spool01/dataset`.
    Volume plugin will create filesystems in this dataset and mount them to use as Docker volumes.
 2. Create plugin configuration file: `/etc/nexentastor-docker-volume-plugin/config.yaml`. Plugin configuration
-    [example](/etc/nexentastor-docker-volume-plugin/config.yaml):
+    [example](https://github.com/Nexenta/nexentastor-docker-volume-plugin/blob/master/etc/nexentastor-docker-volume-plugin/config.yaml):
    ```yaml
    restIp: https://10.3.3.4:8443,https://10.3.3.5:8443 # [required] NexentaStor REST API endpoint(s)
    username: admin                                     # [required] NexentaStor REST API username
@@ -101,6 +102,26 @@ docker plugin disable nexenta/nexentastor-docker-volume-plugin:1.0.0
 docker plugin remove nexenta/nexentastor-docker-volume-plugin:1.0.0
 ```
 
+## Troubleshooting
+
+- Plugin logs
+  ```bash
+  # log file
+  tail -f /var/lib/docker/plugins/*/rootfs/var/log/nexentastor-docker-volume-plugin.log
+
+  # system journal
+  journalctl -f -u docker.service
+  ```
+- Check mounts exist on host
+  ```bash
+  mount | grep /var/lib/docker/plugins
+  mount | grep NEXENTASTOR_DATA_IP_FROM_CONFIG_FILE
+  ```
+- Show installed plugins:
+  ```bash
+  docker plugin list
+  ```
+
 ## Development
 
 Commits should follow [Conventional Commits Spec](https://conventionalcommits.org).
@@ -144,6 +165,11 @@ TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development
 
 # run all tests using local Docker registry (in container):
 TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development-container
+
+# configure Docker to trust insecure registries:
+# add `{"insecure-registries":["10.3.199.92:5000"]}` to:
+vim /etc/docker/daemon.json
+service docker restart
 ```
 
 ### Debug
@@ -195,29 +221,3 @@ VERSION=X.X.X make release
    ```
 
 4. Update Github [releases](https://github.com/Nexenta/nexentastor-docker-volume-plugin/releases).
-
-## Troubleshooting
-
-- Show installed plugins:
-  ```bash
-  docker plugin list
-  ```
-- Plugin logs
-  ```bash
-  # log file
-  tail -f /var/lib/docker/plugins/*/rootfs/var/log/nexentastor-docker-volume-plugin.log
-
-  # system journal
-  journalctl -f -u docker.service
-  ```
-- Check mounts exist on host
-  ```bash
-  mount | grep /var/lib/docker/plugins
-  mount | grep NEXENTASTOR_DATA_IP_FROM_CONFIG_FILE
-  ```
-- Configure Docker to trust insecure registries:
-  ```bash
-  # add `{"insecure-registries":["10.3.199.92:5000"]}` to:
-  vim /etc/docker/daemon.json
-  service docker restart
-  ```
