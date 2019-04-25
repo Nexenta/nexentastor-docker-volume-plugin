@@ -12,9 +12,9 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
 
 ## Supported versions
 
-|                | NexentaStor 5.1.2, 5.2.0, 5.2.1                                                 |
-|----------------|---------------------------------------------------------------------------------|
-| Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
+|                | NexentaStor 5.1.2                                                               | NexentaStor 5.2.0                                                               | NexentaStor 5.2.1                                                               |
+|----------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
 
 ## Requirements
 
