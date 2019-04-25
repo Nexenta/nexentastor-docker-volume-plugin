@@ -12,15 +12,14 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
 
 ## Supported versions
 
-|                | NexentaStor 5.1                                                                 | NexentaStor 5.2                                                                 |
-|----------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
+|                | NexentaStor 5.1.2, 5.2.0, 5.2.1                                                 |
+|----------------|---------------------------------------------------------------------------------|
+| Docker >=17.06 | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
 
 ## Requirements
 
-Following utilities must be installed on Docker setup:
+Following utilities must be installed on Docker setup for NFS mounts:
 ```bash
-# for NFS mounts
 apt install -y nfs-common
 ```
 
@@ -39,7 +38,6 @@ apt install -y nfs-common
    #defaultMountOptions: noatime                       # mount options (mount -o ...)
    #debug: true                                        # more logs (true/false)
    ```
-
 3. Install volume plugin:
    ```
    docker plugin install nexenta/nexentastor-docker-volume-plugin:1.0.0
@@ -101,6 +99,11 @@ docker plugin disable nexenta/nexentastor-docker-volume-plugin:1.0.0
 # remove plugin
 docker plugin remove nexenta/nexentastor-docker-volume-plugin:1.0.0
 ```
+
+## Knows Issues
+
+- Volume list per plugin is restricted to 100 items
+- Creating volumes during NS HA failover might prevent the failover.
 
 ## Troubleshooting
 
