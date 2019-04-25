@@ -40,19 +40,19 @@ pipeline {
                 sh 'make build-production'
             }
         }
-        stage('Push [hub.docker.com]') {
-            when {
-                branch 'master'
-            }
-            environment {
-                DOCKER = credentials('docker-hub-credentials')
-            }
-            steps {
-                sh '''
-                    docker login -u ${DOCKER_USR} -p ${DOCKER_PSW};
-                    make push-production;
-                '''
-            }
-        }
+        // stage('Push [hub.docker.com]') {
+        //     when {
+        //         branch 'master'
+        //     }
+        //     environment {
+        //         DOCKER = credentials('docker-hub-credentials')
+        //     }
+        //     steps {
+        //         sh '''
+        //             docker login -u ${DOCKER_USR} -p ${DOCKER_PSW};
+        //             make push-production;
+        //         '''
+        //     }
+        // }
     }
 }
