@@ -37,6 +37,10 @@
   name = "github.com/sirupsen/logrus"
   version = "^1.0.0"
 
+[[override]]
+  name = "github.com/docker/go-connections"
+  version = "v0.4.0"
+
 [prune]
   go-tests = true
   unused-packages = true
