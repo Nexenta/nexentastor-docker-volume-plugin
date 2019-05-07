@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+// NexentaStor filesystem list limit (<=)
+// TODO change this limit base on specified NS version
+const nsFilesystemListLimit = 100
+
 // LogIn logs in to NexentaStor API and get auth token
 func (p *Provider) LogIn() error {
 	l := p.Log.WithField("func", "LogIn()")
@@ -115,8 +119,45 @@ func (p *Provider) GetFilesystem(path string) (filesystem Filesystem, err error)
 
 // GetFilesystems returns all NexentaStor filesystems by parent filesystem
 func (p *Provider) GetFilesystems(parent string) ([]Filesystem, error) {
+	filesystems := []Filesystem{}
+
+	offset := 1
+	lastResultCount := nsFilesystemListLimit
+	for lastResultCount >= nsFilesystemListLimit {
+		filesystemsSlice, err := p.GetFilesystemsSlice(parent, nsFilesystemListLimit-1, offset)
+		if err != nil {
+			return nil, err
+		}
+		for _, fs := range filesystemsSlice {
+			filesystems = append(filesystems, fs)
+		}
+		lastResultCount = len(filesystemsSlice)
+		offset += lastResultCount
+	}
+
+	return filesystems, nil
+}
+
+// GetFilesystemsSlice returns slice of filesystems by parent filesystem with specified limit and offset
+// offset - the first record number of collection, that would be included in result
+func (p *Provider) GetFilesystemsSlice(parent string, limit, offset int) ([]Filesystem, error) {
+	if limit <= 0 || limit >= nsFilesystemListLimit {
+		return nil, fmt.Errorf(
+			"GetFilesystemsSlice(): parameter 'limit' must to be greater that 0 and less than %d, got: %d",
+			nsFilesystemListLimit,
+			limit,
+		)
+	} else if offset < 0 {
+		return nil, fmt.Errorf(
+			"GetFilesystemsSlice(): parameter 'offset' must to be greater or equal to 0, got: %d",
+			offset,
+		)
+	}
+
 	uri := p.RestClient.BuildURI("/storage/filesystems", map[string]string{
 		"parent": parent,
+		"limit":  fmt.Sprint(limit + 1), // the result includes parent itself
+		"offset": fmt.Sprint(offset),
 		"fields": "path,mountPoint,bytesAvailable,bytesUsed,sharedOverNfs,sharedOverSmb",
 	})
 
@@ -186,9 +227,11 @@ func (p *Provider) DestroyFilesystemWithClones(path string, destroySnapshots boo
 
 	for i := 0; i < maxAttemptCount; i++ {
 		err = p.DestroyFilesystem(path, destroySnapshots)
-		if err == nil || IsNotExistNefError(err) {
+		if err == nil {
+			return nil
+		} else if IsNotExistNefError(err) {
 			return err
-		} else if !IsAlreadyExistNefError(err) {
+		} else if !IsAlreadyExistNefError(err) { // EEXIST code there means the filesystem has dependent clones
 			continue
 		}
 
@@ -267,7 +310,7 @@ func (p *Provider) CreateNfsShare(params CreateNfsShareParams) error {
 		Filesystem: params.Filesystem,
 		Anon:       "root",
 		SecurityContexts: []nefNasNfsRequestSecurityContext{
-			nefNasNfsRequestSecurityContext{
+			{
 				SecurityModes: []string{"sys"},
 			},
 		},

@@ -34,8 +34,9 @@ type ProviderInterface interface {
 	DestroyFilesystemWithClones(path string, destroySnapshots bool) error
 	SetFilesystemACL(path string, aclRuleSet ACLRuleSet) error
 	GetFilesystem(path string) (Filesystem, error)
-	GetFilesystems(parent string) ([]Filesystem, error)
 	GetFilesystemAvailableCapacity(path string) (int64, error)
+	GetFilesystems(parent string) ([]Filesystem, error)
+	GetFilesystemsSlice(parent string, limit, offset int) ([]Filesystem, error)
 
 	// filesystems - nfs share
 	CreateNfsShare(params CreateNfsShareParams) error
