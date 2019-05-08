@@ -165,6 +165,8 @@ update-latest:
 	@echo "\nPublish 'latest' version? [y/N]: "
 	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
 	cp config.json ./plugin/
+	docker plugin disable -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:latest || true
+	docker plugin remove -f ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:latest || true
 	docker plugin create ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:latest ./plugin
 	docker plugin push ${REGISTRY_PRODUCTION}/${IMAGE_NAME}:latest
 
