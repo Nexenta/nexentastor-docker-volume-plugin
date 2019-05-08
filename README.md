@@ -139,6 +139,9 @@ Build and push commands take Git branch as a plugin version to build.
 
 # Note: same operations work with "*-production" postfix.
 
+# print variables and help
+make
+
 # build with development tag (default for `make` w/o params)
 make build-development
 
@@ -150,9 +153,6 @@ make uninstall-development
 
 # publish the latest built container to the local registry (see `Makefile`)
 make push-development
-
-# print variables and help
-make
 
 # update deps
 # go get -u github.com/golang/dep/cmd/dep

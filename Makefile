@@ -43,7 +43,7 @@ all:
 	@echo "  enable-development                    - enable production version of plugin on local machine"
 	@echo "  uninstall-development                 - uninstall production version of plugin from local machine"
 	@echo "  test-unit-container                   - run unit tests in a container"
-	@echo "  test-e2e-docker-development-container - run end-to-end tests in a container using remove Docker setup"
+	@echo "  test-e2e-docker-development-container - run end-to-end tests in a container using remote Docker setup"
 	@echo "  update-latest                         - push latest tag to hub.docker.com"
 	@echo "  release                               - create and publish a new release"
 	@echo ""
