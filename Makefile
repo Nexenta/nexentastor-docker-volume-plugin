@@ -1,8 +1,9 @@
 # NexentaStor Docker Volume plugin makefile
 #
 # Test options to be set before run tests:
-# - NOCOLOR=1                   # disable colors
-# - TEST_DOCKER_IP=10.3.199.249 # for e2e Docker tests
+# - NOCOLOR=1                                # disable colors
+# - TEST_DOCKER_IP=10.3.199.249              # for e2e Docker tests
+# - TEST_NS_SINGLE=https://10.3.199.247:8443 # single NS API address
 #
 
 PLUGIN_NAME = nexentastor-docker-volume-plugin
@@ -19,9 +20,10 @@ DOCKER_CONTAINER_CHANGELOG = ${DOCKER_IMAGE_CHANGELOG}-container
 REGISTRY_PRODUCTION ?= nexenta
 REGISTRY_DEVELOPMENT ?= 10.3.199.92:5000
 
-# use git branch as default version if not set by env variable
 GIT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD | sed -e "s/.*\\///")
-VERSION ?= ${GIT_BRANCH}
+GIT_TAG = $(shell git describe --tags)
+# use git branch as default version if not set by env variable, if HEAD is detached that use the most recent tag
+VERSION ?= $(if $(subst HEAD,,${GIT_BRANCH}),$(GIT_BRANCH),$(GIT_TAG))
 COMMIT ?= $(shell git rev-parse HEAD | cut -c 1-7)
 DATETIME ?= $(shell date -u +'%F_%T')
 LDFLAGS ?= \
@@ -30,7 +32,33 @@ LDFLAGS ?= \
 	-X ${GIT_REPOSITORY}/pkg/config.DateTime=${DATETIME}
 
 .PHONY: all
-all: build-development
+all:
+	@echo "Some of available commands:"
+	@echo "  build-development                     - build development version of plugin"
+	@echo "  push-development                      - push development version of plugin to local registry (${REGISTRY_DEVELOPMENT})"
+	@echo "  enable-development                    - enable development version of plugin on local machine"
+	@echo "  uninstall-development                 - uninstall development version of plugin from local machine"
+	@echo "  build-development                     - build production version of plugin"
+	@echo "  push-development                      - push production version of plugin to hub.docker.com registry (${REGISTRY_PRODUCTION})"
+	@echo "  enable-development                    - enable production version of plugin on local machine"
+	@echo "  uninstall-development                 - uninstall production version of plugin from local machine"
+	@echo "  test-unit-container                   - run unit tests in a container"
+	@echo "  test-e2e-docker-development-container - run end-to-end tests in a container using remove Docker setup"
+	@echo "  update-latest                         - push latest tag to hub.docker.com"
+	@echo "  release                               - create and publish a new release"
+	@echo ""
+	@make print-variables
+
+.PHONY: print-variables
+print-variables:
+	@echo "Variables:"
+	@echo "  VERSION:    ${VERSION}"
+	@echo "  GIT_BRANCH: ${GIT_BRANCH}"
+	@echo "  GIT_TAG:    ${GIT_TAG}"
+	@echo "  COMMIT:     ${COMMIT}"
+	@echo "Testing variables:"
+	@echo "  TEST_NS_SINGLE: ${TEST_NS_SINGLE}"
+	@echo "  TEST_DOCKER_IP: ${TEST_DOCKER_IP}"
 
 .PHONY: build-go
 build-go:

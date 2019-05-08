@@ -151,6 +151,9 @@ make uninstall-development
 # publish the latest built container to the local registry (see `Makefile`)
 make push-development
 
+# print variables and help
+make
+
 # update deps
 # go get -u github.com/golang/dep/cmd/dep
 ~/go/bin/dep ensure

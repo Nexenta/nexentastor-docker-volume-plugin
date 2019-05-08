@@ -14,6 +14,7 @@ pipeline {
     stages {
         stage('Build development') {
             steps {
+                sh 'make print-variables'
                 sh 'make build-development'
             }
         }
@@ -29,10 +30,8 @@ pipeline {
         }
         stage('Tests [e2e-docker]') {
             steps {
-                sh '''
-                    ./tests/bash/generateConfig.sh tests/e2e/_configs/single-ns.yaml ${TEST_NS_SINGLE}
-                    TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development-container;
-                '''
+                sh './tests/bash/generateConfig.sh tests/e2e/_configs/single-ns.yaml ${TEST_NS_SINGLE}'
+                sh 'TEST_DOCKER_IP=${TEST_DOCKER_IP} make test-e2e-docker-development-container'
             }
         }
         stage('Build production') {
