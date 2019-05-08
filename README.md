@@ -102,7 +102,6 @@ docker plugin remove nexenta/nexentastor-docker-volume-plugin
 
 ## Knows Issues
 
-- Volume list per plugin is restricted to 50 items for NexentaStor 5.1.2 and 100 items for latests
 - Creating volumes during NS HA failover might prevent the failover.
 
 ## Troubleshooting
