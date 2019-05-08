@@ -196,13 +196,13 @@ All development happens in `master` branch,
 when it's time to publish a new version,
 new git tag should be created.
 
-1. Build and test the new version using local registry:
+1. Build and [test](#test) the new version using local registry:
    ```bash
    # build development version:
    make build-development
    # publish to local registry
    make push-development
-   # for now, manually test plugin using local registry
+   # run test commands
    ```
 
 2. Release a new version. This script does following:
@@ -212,19 +212,19 @@ new git tag should be created.
    - publishes plugin version 'nexenta/nexentastor-docker-volume-plugin:X.X.X' to hub.docker.com
    - creates git tag 'X.X.X' and pushes it to the repository
    - asks to update 'latest' tag on hub.docker.com, updates it if needed.
-```bash
-VERSION=X.X.X make release
-```
+   ```bash
+   VERSION=X.X.X make release
+   ```
+
+   **Note**: Release command does this, but `latest` tag can be build and pushed manually if needed.
+   This command takes the most recent built plugin (from local `./plugin` folder)
+   and pushes it as `latest` tag to hub.docker.com.
+   ```
+   make update-latest
+   ```
 
 3. Update Github [releases](https://github.com/Nexenta/nexentastor-docker-volume-plugin/releases).
 
 4. Update Docker Hub
    [description](https://cloud.docker.com/u/nexenta/repository/docker/nexenta/nexentastor-docker-volume-plugin/general)
    if needed.
-
-**Note**: Release command does this, but `latest` tag can be build and pushed manually if needed.
-This command takes the most recent built plugin (from local `./plugin` folder)
-and pushes it as `latest` tag to hub.docker.com.
-```
-make update-latest
-```
