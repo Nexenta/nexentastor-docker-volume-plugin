@@ -14,7 +14,7 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
 
 |                | NexentaStor 5.1.2                                                               | NexentaStor 5.2.0                                                               | NexentaStor 5.2.1                                                               |
 |----------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| Docker >=17.06 | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.0.0](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
+| Docker >=17.06 | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
 
 ## Requirements
 
@@ -40,19 +40,19 @@ apt install -y nfs-common
    ```
 3. Install volume plugin:
    ```
-   docker plugin install nexenta/nexentastor-docker-volume-plugin:1.0.0
+   docker plugin install nexenta/nexentastor-docker-volume-plugin
    ```
 4. Enable volume plugin:
    ```
-   docker plugin enable nexenta/nexentastor-docker-volume-plugin:1.0.0
+   docker plugin enable nexenta/nexentastor-docker-volume-plugin
    ```
 
 Volume plugin should be listed after installation:
 
 ```
 $ docker plugin list
-ID             NAME                                             DESCRIPTION                            ENABLED
-b227326b403d   nexenta/nexentastor-docker-volume-plugin:1.0.0   Docker Volume Plugin for NexentaStor   true
+ID             NAME                                              DESCRIPTION                            ENABLED
+b227326b403d   nexenta/nexentastor-docker-volume-plugin:latest   Docker Volume Plugin for NexentaStor   true
 ```
 
 ## Configuration
@@ -80,7 +80,7 @@ All plugin configuration options:
    ```
 - Create Docker volume `testvolume` if NexentaStor filesystem doesn't exist:
    ```bash
-   docker volume create -d nexenta/nexentastor-docker-volume-plugin:1.0.0 --name=testvolume
+   docker volume create -d nexenta/nexentastor-docker-volume-plugin --name=testvolume
    ```
    **Note**: This operation will create a filesystem on NexentaStore in case it doesn't exist.
 - Run container which uses created volume `testvolume`:
@@ -94,10 +94,10 @@ All plugin configuration options:
 
 ```bash
 # disable plugin
-docker plugin disable nexenta/nexentastor-docker-volume-plugin:1.0.0
+docker plugin disable nexenta/nexentastor-docker-volume-plugin
 
 # remove plugin
-docker plugin remove nexenta/nexentastor-docker-volume-plugin:1.0.0
+docker plugin remove nexenta/nexentastor-docker-volume-plugin
 ```
 
 ## Knows Issues
@@ -216,11 +216,15 @@ new git tag should be created.
 VERSION=X.X.X make release
 ```
 
-3. Push `latest` tag if needed.
-   This command takes the most recent built plugin (from local `./plugin` folder)
-   and pushes it as `latest` tag to hub.docker.com.
-   ```
-   make update-latest
-   ```
+3. Update Github [releases](https://github.com/Nexenta/nexentastor-docker-volume-plugin/releases).
 
-4. Update Github [releases](https://github.com/Nexenta/nexentastor-docker-volume-plugin/releases).
+4. Update Docker Hub
+   [description](https://cloud.docker.com/u/nexenta/repository/docker/nexenta/nexentastor-docker-volume-plugin/general)
+   if needed.
+
+**Note**: Release command does this, but `latest` tag can be build and pushed manually if needed.
+This command takes the most recent built plugin (from local `./plugin` folder)
+and pushes it as `latest` tag to hub.docker.com.
+```
+make update-latest
+```
