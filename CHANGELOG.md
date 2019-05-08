@@ -1,4 +1,12 @@
 
+<a name="1.0.1"></a>
+## [1.0.1](https://github.com/Nexenta/go-nexentastor/compare/1.0.0...1.0.1) (2019-05-07)
+
+### Bug Fixes
+
+* NEX-20603 - volume list shows only 100 first volumes
+
+
 <a name="1.0.0"></a>
 ## 1.0.0 (2019-04-22)
 
