@@ -16,6 +16,12 @@ NexentaStor product page: [https://nexenta.com/products/nexentastor](https://nex
 |----------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
 | Docker >=17.06 | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) | [1.X.X](https://hub.docker.com/r/nexenta/nexentastor-docker-volume-plugin/tags) |
 
+## Features
+
+- Create new volume
+- Use existing volume
+- NFS mount protocol
+
 ## Requirements
 
 Following utilities must be installed on Docker setup for NFS mounts:
