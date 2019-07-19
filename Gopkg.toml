@@ -27,7 +27,7 @@
 
 [[constraint]]
   name = "github.com/Nexenta/go-nexentastor"
-  version = "1.0.1"
+  version = "1.2.0"
 
 [[constraint]]
   name = "github.com/docker/go-plugins-helpers"
