@@ -43,8 +43,8 @@ const (
 	FsTypeNFS string = "nfs"
 )
 
-// a valid NS REST endpoint
-const addressRegExp = "^https?://[^:]+:[0-9]{1,5}$"
+// NexentaStor address format
+var regexpAddress = regexp.MustCompile("^https?://[^:]+:[0-9]{1,5}$")
 
 // Config - plugin config from file
 type Config struct {
@@ -118,7 +118,7 @@ func (c *Config) Validate() error {
 	} else {
 		addresses := strings.Split(c.Address, ",")
 		for _, address := range addresses {
-			if !regexp.MustCompile(addressRegExp).MatchString(address) {
+			if !regexpAddress.MatchString(address) {
 				errors = append(
 					errors,
 					fmt.Sprintf(
