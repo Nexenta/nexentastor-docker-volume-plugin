@@ -213,18 +213,19 @@ new git tag should be created.
    # run test commands
    ```
 
-2. Release a new version. This script does following:
+2. To release a new version run command:
+   ```bash
+   VERSION=X.X.X make release
+   ```
+   This script does following:
    - generates new `CHANGELOG.md`
    - builds plugin version 'nexenta/nexentastor-docker-volume-plugin:X.X.X'
    - logs in to hub.docker.com
    - publishes plugin version 'nexenta/nexentastor-docker-volume-plugin:X.X.X' to hub.docker.com
-   - creates git tag 'X.X.X' and pushes it to the repository
+   - creates git tag 'vX.X.X' and pushes it to the repository
    - asks to update 'latest' tag on hub.docker.com, updates it if needed.
-   ```bash
-   VERSION=X.X.X make release
-   ```
 
-   **Note**: Release command does this, but `latest` tag can be build and pushed manually if needed.
+   **Note**: Release command does this, but `latest` tag can be built and pushed later manually if needed.
    This command takes the most recent built plugin (from local `./plugin` folder)
    and pushes it as `latest` tag to hub.docker.com.
    ```

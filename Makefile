@@ -151,7 +151,7 @@ endif
 
 .PHONY: release
 release:
-	@echo "New tag: '${VERSION}'\n\n \
+	@echo "New tag: 'v${VERSION}'\n\n \
 		To change version set enviroment variable 'VERSION=X.X.X make release'.\n\n \
 		Confirm that:\n \
 		1. New version will be based on current '${GIT_BRANCH}' git branch\n \
@@ -159,7 +159,7 @@ release:
 		3. Login to hub.docker.com will be requested\n \
 		4. Plugin version '${REGISTRY_PRODUCTION}/${IMAGE_NAME}:${VERSION}' will be pushed to hub.docker.com\n \
 		5. CHANGELOG.md file will be updated\n \
-		6. Git tag '${VERSION}' will be created and pushed to the repository.\n \
+		6. Git tag 'v${VERSION}' will be created and pushed to the repository.\n \
 		7. Update for 'latest' tag will be suggested, if needed, hub.docker.com 'latest' tag will be updated too.\n\n \
 		Are you sure? [y/N]: "
 	@(read ANSWER && case "$$ANSWER" in [yY]) true;; *) false;; esac)
@@ -168,15 +168,15 @@ release:
 	docker login
 	make push-production
 	git add CHANGELOG.md
-	git commit -m "release ${VERSION}"
+	git commit -m "release v${VERSION}"
 	git push
-	git tag ${VERSION}
+	git tag v${VERSION}
 	git push --tags
 	make update-latest
 
 .PHONY: generate-changelog
 generate-changelog:
-	@echo "Release tag: ${VERSION}\n"
+	@echo "Release docker tag: ${VERSION}\n"
 	docker build -f ${DOCKER_FILE_CHANGELOG} -t ${DOCKER_IMAGE_CHANGELOG} --build-arg VERSION=${VERSION} .
 	-docker rm -f ${DOCKER_CONTAINER_CHANGELOG}
 	docker create --name ${DOCKER_CONTAINER_CHANGELOG} ${DOCKER_IMAGE_CHANGELOG}
