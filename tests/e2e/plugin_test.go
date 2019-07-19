@@ -263,6 +263,28 @@ func TestPlugin_deploy(t *testing.T) {
 		l.Info("OK: All files have same md5 hash")
 	})
 
+	// Test scenario: plugin should do mount with default option
+	t.Run("should mount volume with default mount options (vers=3,timeo=100)", func(t *testing.T) {
+		defaultOptions := []string{"vers=3", "timeo=100"}
+		mountSource := fmt.Sprintf("%s:/%s/%s", pc.DefaultDataIP, pc.DefaultDataset, volumeName)
+
+		for _, option := range defaultOptions {
+			// run container, grep mount options
+			grepMountOptionCommand := fmt.Sprintf(
+				"mount | grep '%s' | grep -oe '[^a-z0-9]%s[^a-z0-9]'",
+				mountSource,
+				option,
+			)
+			out, err := dockerPlugin.RunVolumeContainerCommand(volumeName, grepMountOptionCommand)
+			if err != nil {
+				t.Fatal(err)
+			}
+			l.Infof("Default option '%s' was found: '%s'", option, out)
+		}
+
+		l.Info("OK: All default mount options are presented")
+	})
+
 	t.Run(fmt.Sprintf("remove volume: %s", volumeName), func(t *testing.T) {
 		if err := dockerPlugin.RemoveVolume(volumeName); err != nil {
 			t.Fatal(err)
