@@ -138,18 +138,63 @@ func (p *Provider) GetFilesystems(parent string) ([]Filesystem, error) {
 	return filesystems, nil
 }
 
-// GetFilesystemsSlice returns slice of filesystems by parent filesystem with specified limit and offset
+// GetFilesystemsWithStartingToken returns filesystems by parent filesystem after specified starting token
+// parent - parent filesystem's path
+// startingToken - a path to a specific filesystem to start AFTER this token
+// limit - the maximum count of filesystems to return in the list
+// Function may return nextToken if there is more filesystems than limit value
+func (p *Provider) GetFilesystemsWithStartingToken(parent string, startingToken string, limit int) (
+	filesystems []Filesystem,
+	nextToken string,
+	err error,
+) {
+	startingTokenFound := false
+	if startingToken == "" {
+		// if no startingToken set then filesystem list should starts with the first one
+		startingTokenFound = true
+	}
+
+	// if no limit set then all filesystem after startingToken should be in the response
+	noLimit := limit == 0
+
+	// load filesystems using slice requests
+	offset := 1
+	lastResultCount := nsFilesystemListLimit
+	for (noLimit || len(filesystems) < limit) && lastResultCount >= nsFilesystemListLimit {
+		filesystemsSlice, err := p.GetFilesystemsSlice(parent, nsFilesystemListLimit-1, offset)
+		if err != nil {
+			return nil, "", err
+		}
+		for _, fs := range filesystemsSlice {
+			if startingTokenFound {
+				filesystems = append(filesystems, fs)
+				if len(filesystems) == limit {
+					nextToken = fs.Path
+					break
+				}
+			} else if fs.Path == startingToken {
+				startingTokenFound = true
+			}
+		}
+		lastResultCount = len(filesystemsSlice)
+		offset += lastResultCount
+	}
+
+	return filesystems, nextToken, nil
+}
+
+// GetFilesystemsSlice returns a slice of filesystems by parent filesystem with specified limit and offset
 // offset - the first record number of collection, that would be included in result
 func (p *Provider) GetFilesystemsSlice(parent string, limit, offset int) ([]Filesystem, error) {
 	if limit <= 0 || limit >= nsFilesystemListLimit {
 		return nil, fmt.Errorf(
-			"GetFilesystemsSlice(): parameter 'limit' must to be greater that 0 and less than %d, got: %d",
+			"GetFilesystemsSlice(): parameter 'limit' must be greater that 0 and less than %d, got: %d",
 			nsFilesystemListLimit,
 			limit,
 		)
 	} else if offset < 0 {
 		return nil, fmt.Errorf(
-			"GetFilesystemsSlice(): parameter 'offset' must to be greater or equal to 0, got: %d",
+			"GetFilesystemsSlice(): parameter 'offset' must be greater or equal to 0, got: %d",
 			offset,
 		)
 	}

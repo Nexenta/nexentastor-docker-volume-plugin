@@ -171,6 +171,10 @@ make push-development
 # - TEST_DOCKER_IP=10.3.199.249 # Docker setup IP address to test on
 # - NOCOLORS=true               # disable colors
 
+# build plugin and push it to the local registry
+make build-development
+make push-development
+
 # run all tests using local Docker registry:
 TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development
 

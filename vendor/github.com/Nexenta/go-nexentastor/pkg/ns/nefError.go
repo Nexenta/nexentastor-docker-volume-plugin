@@ -42,3 +42,8 @@ func IsBusyNefError(err error) bool {
 func IsAuthNefError(err error) bool {
 	return GetNefErrorCode(err) == "EAUTH" //TODO use constants
 }
+
+// IsBadArgNefError treats an error as NefError and returns true if its code is "EBADARG"
+func IsBadArgNefError(err error) bool {
+	return GetNefErrorCode(err) == "EBADARG"
+}

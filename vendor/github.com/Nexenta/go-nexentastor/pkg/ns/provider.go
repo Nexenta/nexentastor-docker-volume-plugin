@@ -36,6 +36,7 @@ type ProviderInterface interface {
 	GetFilesystem(path string) (Filesystem, error)
 	GetFilesystemAvailableCapacity(path string) (int64, error)
 	GetFilesystems(parent string) ([]Filesystem, error)
+	GetFilesystemsWithStartingToken(parent string, startingToken string, limit int) ([]Filesystem, string, error)
 	GetFilesystemsSlice(parent string, limit, offset int) ([]Filesystem, error)
 
 	// filesystems - nfs share
