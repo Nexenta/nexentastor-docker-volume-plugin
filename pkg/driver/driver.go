@@ -15,6 +15,10 @@ import (
 	"github.com/Nexenta/nexentastor-docker-volume-plugin/pkg/mounter"
 )
 
+// mount options regexps
+var regexpMountOptionVers = regexp.MustCompile("^vers=.*$")
+var regexpMountOptionTimeo = regexp.MustCompile("^timeo=.*$")
+
 // Driver - Docker Volume driver for NS, it implements methods /VolumeDriver.*:
 // https://docs.docker.com/v17.09/engine/extend/plugins_volume/
 type Driver struct {
@@ -433,7 +437,10 @@ func (d *Driver) mountNFSShare(filesystem ns.Filesystem, dataIP, targetPath stri
 	mountSource := getNFSMountSource(dataIP, filesystem.MountPoint)
 
 	// NFS v3 is used by default if no version specified by user
-	mountOptions = arrays.AppendIfRegexpNotExistString(mountOptions, regexp.MustCompile("^vers=.*$"), "vers=3")
+	mountOptions = arrays.AppendIfRegexpNotExistString(mountOptions, regexpMountOptionVers, "vers=3")
+
+	// NFS option `timeo=100` is used by default if not specified by user
+	mountOptions = arrays.AppendIfRegexpNotExistString(mountOptions, regexpMountOptionTimeo, "timeo=100")
 
 	// check if this filesystem is already mounted on the host
 	// validate if this mount can be used within another container (has same source, target and options)
