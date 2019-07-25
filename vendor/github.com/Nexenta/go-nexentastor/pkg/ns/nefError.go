@@ -14,6 +14,12 @@ func (e *NefError) Error() string {
 	return fmt.Sprintf("%s [code: %s]", e.Err, e.Code)
 }
 
+// IsNefError - checks if an error is an NefError
+func IsNefError(err error) bool {
+	_, ok := err.(*NefError)
+	return ok
+}
+
 // GetNefErrorCode - treats an error as NefError and returns its code in case of success
 func GetNefErrorCode(err error) string {
 	if nefErr, ok := err.(*NefError); ok {

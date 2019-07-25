@@ -72,9 +72,7 @@ func (c *Client) Send(method, path string, data interface{}) (int, []byte, error
 
 	// send request data as json
 	var jsonDataReader io.Reader
-	if data == nil {
-		jsonDataReader = nil
-	} else {
+	if data != nil {
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			return 0, nil, err

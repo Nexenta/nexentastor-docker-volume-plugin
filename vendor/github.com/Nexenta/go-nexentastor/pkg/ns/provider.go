@@ -30,8 +30,7 @@ type ProviderInterface interface {
 
 	// filesystems
 	CreateFilesystem(params CreateFilesystemParams) error
-	DestroyFilesystem(path string, destroySnapshots bool) error
-	DestroyFilesystemWithClones(path string, destroySnapshots bool) error
+	DestroyFilesystem(path string, params DestroyFilesystemParams) error
 	SetFilesystemACL(path string, aclRuleSet ACLRuleSet) error
 	GetFilesystem(path string) (Filesystem, error)
 	GetFilesystemAvailableCapacity(path string) (int64, error)
@@ -200,7 +199,7 @@ func (p *Provider) doAuthRequest(method, path string, data interface{}) ([]byte,
 func (p *Provider) parseAsyncJobHref(bodyBytes []byte) (string, error) {
 	response := nefJobStatusResponse{}
 	if err := json.Unmarshal(bodyBytes, &response); err != nil {
-		return "", fmt.Errorf("Cannot parse NS response '%s' to '%+v'", bodyBytes, response)
+		return "", fmt.Errorf("Cannot parse NS response '%s' to '%+v': %s", bodyBytes, response, err)
 	}
 
 	for _, link := range response.Links {
@@ -257,7 +256,7 @@ type ProviderArgs struct {
 func NewProvider(args ProviderArgs) (ProviderInterface, error) {
 	l := args.Log.WithFields(logrus.Fields{
 		"cmp": "NSProvider",
-		"ns":  fmt.Sprint(args.Address),
+		"ns":  args.Address,
 	})
 
 	if args.Address == "" {

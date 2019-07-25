@@ -241,87 +241,132 @@ func (p *Provider) CreateFilesystem(params CreateFilesystemParams) error {
 	return p.sendRequest(http.MethodPost, "/storage/filesystems", params)
 }
 
-// DestroyFilesystem destroys filesystem by path
-func (p *Provider) DestroyFilesystem(path string, destroySnapshots bool) error {
-	if path == "" {
-		return fmt.Errorf("Filesystem path is required")
+// DestroyFilesystemParams - filesystem deletion parameters
+type DestroyFilesystemParams struct {
+	// If set to `true`, then tries to destroy filesystem's snapshots as well.
+	// In case some snapshots have clones, the filesystem cannot be deleted
+	// without deleting all dependent clones, OR promoting one of the clones
+	// to take over the snapshots (see "PromoteMostRecentCloneIfExists" parameter).
+	DestroySnapshots bool
+
+	// If set to `true`, then tries to find the most recent snapshot clone and if found one,
+	// that clone will be promoted to take over all the snapshots from the original filesystem,
+	// then the original filesystem will be destroyed.
+	//
+	// Initial state:
+	//    [fsSource]---+                       // source filesystem
+	//                 |    [snapshot1]        // source filesystem snapshots
+	//                 |    [snapshot2]
+	//                 `--->[snapshot3]<---+
+	//                                     |
+	//    [fsClone1]-----------------------+   // filesystem clone of "snapshot3"
+	//    [fsClone2]-----------------------+   // another filesystem clone of "snapshot3"
+	//
+	// After destroy "fsSource" filesystem call (PromoteMostRecentCloneIfExists=true and DestroySnapshots=true):
+	//    [fsClone1]<----------------------+   // "fsClone1" is still linked to "snapshot3"
+	//    [fsClone2]---+                   |   // "fsClone2" is got promoted to take over snapshots of "fsSource"
+	//                 |    [snapshot1]    |
+	//                 |    [snapshot2]    |
+	//                 `--->[snapshot3]<---+
+	//
+	PromoteMostRecentCloneIfExists bool
+}
+
+// DestroyFilesystem destroys filesystem on NS, may destroy snapshots and promote clones (see DestroyFilesystemParams)
+// Path format: 'pool/dataset/filesystem'
+func (p *Provider) DestroyFilesystem(path string, params DestroyFilesystemParams) error {
+	err := p.destroyFilesystem(path, params.DestroySnapshots)
+	if err == nil {
+		return nil
+	} else if !params.PromoteMostRecentCloneIfExists || !IsAlreadyExistNefError(err) {
+		return err
 	}
 
-	destroySnapshotsString := "false"
-	if destroySnapshots {
-		destroySnapshotsString = "true"
+	// If here then filesystem deletion request has failed because
+	// the filesystem has dependent clones (EEXIST error code), trying
+	// to promote the most recent clone to make the filesystem independent:
+
+	maxAttemptCount := 3
+	var mostRecentError error
+
+	for i := 0; i < maxAttemptCount; i++ {
+		mostRecentError = nil
+
+		snapshots, err := p.GetSnapshots(path, true)
+		if err != nil {
+			mostRecentError = fmt.Errorf("failed to get snapshot list: %s", err)
+			break
+		}
+
+		var maxCreationTxg int
+		var mostRecentClone string
+		for _, s := range snapshots {
+			// to get "clones" and "creationTxg" fields that are not presented in the list response
+			snapshot, err := p.GetSnapshot(s.Path)
+			if err != nil {
+				mostRecentError = fmt.Errorf("failed to get '%s' snapshost's info: %s", s.Path, err)
+				break
+			}
+			creationTxg, err := strconv.Atoi(snapshot.CreationTxg)
+			if err != nil {
+				mostRecentError = fmt.Errorf(
+					"snapshot '%s': failed to convert 'creationTxg' value '%s' to integer: %s",
+					s.Path,
+					snapshot.CreationTxg,
+					err,
+				)
+				break
+			} else if len(snapshot.Clones) > 0 && creationTxg > maxCreationTxg {
+				mostRecentClone = snapshot.Clones[0]
+				maxCreationTxg = creationTxg
+			}
+		}
+		if mostRecentError != nil {
+			// Failed to determine the most recent clone.
+			// Give another chance (or exit if max attempt count exceeded) if any error happened
+			// while getting each snaphost's information. For example, the snapshot got deleted
+			// right after snapshot list request, but before requesting its information.
+			continue
+		}
+
+		if mostRecentClone != "" {
+			err := p.PromoteFilesystem(mostRecentClone)
+			if err != nil {
+				mostRecentError = fmt.Errorf("failed to promote clone '%s': %s", mostRecentClone, err)
+				continue
+			}
+		}
+
+		mostRecentError = p.destroyFilesystem(path, params.DestroySnapshots)
+		if mostRecentError == nil {
+			return nil
+		} else if !IsAlreadyExistNefError(mostRecentError) { // if EEXIST code - filesystem still has dependent clones
+			break
+		}
+	}
+
+	// if not a NefError, wrap it into an explanation
+	if !IsNefError(mostRecentError) {
+		return fmt.Errorf("Failed to delete filesystem '%s': %s", path, mostRecentError)
+	}
+
+	return mostRecentError
+}
+
+func (p *Provider) destroyFilesystem(path string, destroySnapshots bool) error {
+	if path == "" {
+		return fmt.Errorf("Filesystem path is required")
 	}
 
 	uri := p.RestClient.BuildURI(
 		fmt.Sprintf("/storage/filesystems/%s", url.PathEscape(path)),
 		map[string]string{
 			"force":     "true",
-			"snapshots": destroySnapshotsString,
+			"snapshots": strconv.FormatBool(destroySnapshots),
 		},
 	)
 
 	return p.sendRequest(http.MethodDelete, uri, nil)
-}
-
-// DestroyFilesystemWithClones destroys filesystem that has or may have clones
-// Method promotes filesystem's most recent snapshots and then delete the filesystem
-func (p *Provider) DestroyFilesystemWithClones(path string, destroySnapshots bool) (err error) {
-	l := p.Log.WithField("func", "DestroyFilesystemWithClones()")
-
-	maxAttemptCount := 3
-
-	for i := 0; i < maxAttemptCount; i++ {
-		err = p.DestroyFilesystem(path, destroySnapshots)
-		if err == nil {
-			return nil
-		} else if IsNotExistNefError(err) {
-			return err
-		} else if !IsAlreadyExistNefError(err) { // EEXIST code there means the filesystem has dependent clones
-			continue
-		}
-
-		// if here then filesystem has dependent clones (EEXIST error on deletion),
-		// need promote the most recent clone to make the filesystem independent
-
-		snapshots, err := p.GetSnapshots(path, true)
-		if err != nil {
-			l.Warnf("filesystem '%s' has clones, but snapshots list was failed: %s (trying again...)", path, err)
-			continue
-		}
-
-		var maxCreationTxg int
-		var mostRecentClone string
-		for _, s := range snapshots {
-			// to get "clones" and "creationTxg" fields that are not presented int the list response
-			snapshot, err := p.GetSnapshot(s.Path)
-			if err != nil {
-				l.Warnf(
-					"filesystem '%s' has clones, but getting snapshot '%s' was failed: %s (trying again...)",
-					path,
-					s.Path,
-					err,
-				)
-				continue
-			}
-			creationTxg, err := strconv.Atoi(snapshot.CreationTxg)
-			if len(snapshot.Clones) > 0 && creationTxg > maxCreationTxg {
-				mostRecentClone = snapshot.Clones[0]
-			}
-		}
-
-		if mostRecentClone == "" {
-			l.Warnf("filesystem '%s' is supposted to has clones, but it doesn't, trying again...", path)
-			continue
-		}
-
-		l.Infof("filesystem '%s' has clone '%s', promote it to free up the filesystem...", path, mostRecentClone)
-		err = p.PromoteFilesystem(mostRecentClone)
-		if err != nil {
-			l.Warnf("failed to promote filesystem clone '%s': %v (trying again...)", mostRecentClone, err)
-		}
-	}
-
-	return fmt.Errorf("Failed to delete filesystem '%s' x%d times, last error: %v", path, maxAttemptCount, err)
 }
 
 // PromoteFilesystem promotes a cloned filesystem to be no longer dependent on its original snapshot
@@ -493,15 +538,10 @@ func (p *Provider) GetSnapshots(volumePath string, recursive bool) ([]Snapshot, 
 		return []Snapshot{}, fmt.Errorf("Snapshots volume path is empty")
 	}
 
-	recursiveString := "false"
-	if recursive {
-		recursiveString = "true"
-	}
-
 	uri := p.RestClient.BuildURI("/storage/snapshots", map[string]string{
 		"parent":    volumePath,
 		"fields":    "path,name,parent,creationTime",
-		"recursive": recursiveString,
+		"recursive": strconv.FormatBool(recursive),
 	})
 
 	response := nefStorageSnapshotsResponse{}
