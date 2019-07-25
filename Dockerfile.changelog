@@ -16,6 +16,6 @@ ARG VERSION
 ENV VERSION=$VERSION
 
 # generate changelog
-RUN echo "Use version: $VERSION" && /go/bin/git-chglog --next-tag ${VERSION} -o CHANGELOG.md
+RUN echo "Use version: $VERSION" && /go/bin/git-chglog --next-tag v${VERSION} -o CHANGELOG.md
 
 ENTRYPOINT ["/bin/bash"]
