@@ -175,6 +175,9 @@ make push-development
 make build-development
 make push-development
 
+# configure NS in `tests/e2e/_configs/single-ns.yaml`
+# Note: Jenkins automatically appends TEST_NS_SINGLE env variable to this config file before run.
+
 # run all tests using local Docker registry:
 TEST_DOCKER_IP=10.3.199.249 make test-e2e-docker-development
 
