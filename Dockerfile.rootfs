@@ -1,7 +1,7 @@
 # this Dockerfile build an image that can be used as rootfs for Docker volume plugin
 
 # build container
-FROM golang:1.11 as builder
+FROM golang:1.12 as builder
 WORKDIR /go/src/github.com/Nexenta/nexentastor-docker-volume-plugin/
 COPY .git ./.git
 COPY cmd ./cmd

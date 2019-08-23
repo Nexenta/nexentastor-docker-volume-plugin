@@ -37,6 +37,10 @@
   name = "github.com/sirupsen/logrus"
   version = "^1.0.0"
 
+[[constraint]]
+  name = "github.com/antonfisher/nested-logrus-formatter"
+  version = "=1.0.2"
+
 [[override]]
   name = "github.com/docker/go-connections"
   version = "v0.4.0"

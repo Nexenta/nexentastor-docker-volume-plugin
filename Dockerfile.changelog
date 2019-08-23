@@ -1,7 +1,7 @@
 # pre-release container generates:
 # - CNAHGELOG.md
 
-FROM golang:1.11
+FROM golang:1.12
 
 WORKDIR /go/src/github.com/Nexenta/nexentastor-docker-volume-plugin/
 
