@@ -18,8 +18,7 @@ set -e
 set -x
 
 # config
-#PLUGIN="10.3.199.92:5000/nexentastor-docker-volume-plugin:1.0.0"
-PLUGIN="nexenta/nexentastor-docker-volume-plugin:1.0.0"
+PLUGIN="10.3.199.92:5000/nexentastor-docker-volume-plugin:master"
 VOLUME_NAME="testvolume"
 MOUNT_SOURCE="10.3.199.243:/spool01/dataset/${VOLUME_NAME}"
 MOUNT_TARGET="testmount"
@@ -35,7 +34,7 @@ docker volume list
 MD5_1=$(\
     docker run -v ${VOLUME_NAME}:/data1 -it --rm ubuntu \
         /bin/bash -c "\
-            dd if=/dev/urandom of=/data1/${TEST_FILE_NAME} bs=1M count=10 >& /dev/null && \
+            dd if=/dev/urandom of=/data1/${TEST_FILE_NAME} bs=1M count=1 >& /dev/null && \
             md5sum /data1/${TEST_FILE_NAME}
         "\
 )
