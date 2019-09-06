@@ -1,14 +1,26 @@
 
-<a name="1.0.1"></a>
-## [1.0.1](https://github.com/Nexenta/go-nexentastor/compare/1.0.0...1.0.1) (2019-05-07)
+<a name="v1.1.0"></a>
+## [v1.1.0](https://github.com/Nexenta/nexentastor-docker-volume-plugin/compare/v1.0.1...v1.1.0) (2019-09-03)
+
+### Bug Fixes
+
+* pre-compile regexp's
+
+### Features
+
+* NEX-20838 - add timeo=100 to default options for NFS mounts
+
+
+<a name="v1.0.1"></a>
+## [v1.0.1](https://github.com/Nexenta/nexentastor-docker-volume-plugin/compare/v1.0.0...v1.0.1) (2019-05-07)
 
 ### Bug Fixes
 
 * NEX-20603 - volume list shows only 100 first volumes
 
 
-<a name="1.0.0"></a>
-## 1.0.0 (2019-04-22)
+<a name="v1.0.0"></a>
+## v1.0.0 (2019-04-22)
 
 ### Bug Fixes
 
@@ -22,6 +34,6 @@
 
 ### Pull Requests
 
-* Merge pull request [#2](https://github.com/Nexenta/go-nexentastor/issues/2) from Nexenta/review_comments
-* Merge pull request [#3](https://github.com/Nexenta/go-nexentastor/issues/3) from Nexenta/build_issues
+* Merge pull request [#2](https://github.com/Nexenta/nexentastor-docker-volume-plugin/issues/2) from Nexenta/review_comments
+* Merge pull request [#3](https://github.com/Nexenta/nexentastor-docker-volume-plugin/issues/3) from Nexenta/build_issues
 
